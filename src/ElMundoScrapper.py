@@ -76,7 +76,7 @@ class WebPage(QtWebEngineWidgets.QWebEnginePage):
                             specialCase = True
                             nextComments = nextComments + 1
                         print(" -> next pagina: {}".format(nextComments))
-                        params = {"noticia": 1648151, "version": "v2", "pagina": nextComments}
+                        params = {"noticia": idNoticia, "version": "v2", "pagina": nextComments}
                         response = requests.get(urlBase, params)
                         responseDecoded = json.loads(response.text)
                         pageComments = pageComments + extractComments(responseDecoded['items'], url, specialCase)
