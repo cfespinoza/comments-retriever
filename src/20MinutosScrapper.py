@@ -63,16 +63,7 @@ class WebPage(QtWebEngineWidgets.QWebEnginePage):
         print(" -> trying to render url: {}".format(url))
         renderedPage = htmlRenderer.fromstring(html)
         if (self._firstPageProcessed):
-            # auxcommentElList = renderedPage.xpath("//script[@type='text/javascript']")
-            #
             streamIDStr = ""
-            # for aux in auxcommentElList:
-            #     if aux.get("src") == None:
-            #         if ("streamID" in aux.text_content()):
-            #             auxStreamID = aux.text_content().split('gigya20m.params = ')[1].split('streamID: ')[1].split(',')[0].replace('\'', "")
-            #             print(auxStreamID)
-            #             streamIDStr = auxStreamID
-            #             break
 
             if "/noticia/" in url:
                 streamIDStr = "noticia-{}".format(url.split("/noticia/")[1].split("/")[0])
@@ -173,65 +164,6 @@ class WebPage(QtWebEngineWidgets.QWebEnginePage):
 
     def handleLoadFinished(self):
         self.toHtml(self.processCurrentPage)
-
-
-# categoryID=abcdigital&streamID=53d4acf0-bdd7-11e9-bc3a-9209dd8341d7&includeSettings=true&start=ts_1565716593506&threaded=true&includeUserOptions=true&includeUserHighlighting=true&lang=es&ctag=comments_v2_templates&APIKey=3_VjZL6dNEbebJWZu9Fa8JJuSZV00WJeDxEoQEbvVyi-0vOVjBGo7fwqGxuZRNOU5B&cid=&source=showCommentsUI&sourceData=%7B%22categoryID%22%3A%22abcdigital%22%2C%22streamID%22%3A%2253d4acf0-bdd7-11e9-bc3a-9209dd8341d7%22%7D&sdk=js_latest&authMode=cookie&pageURL=https%3A%2F%2Fwww.abc.es%2Fespana%2Fabci-tenso-encuentro-aviones-rusos-y-caza-espanol-f-18-sobre-baltico-201908131642_noticia.html%23disqus_thread&format=jsonp&callback=gigya.callback&context=R1013975035
-
-
-# TODO get stream-id
-# TODO get inittimestamp
-
-
-
-## getComments
-# https://gigya.abc.es/comments.getComments
-# ?categoryID=abcdigital
-# &streamID=4738aa6e-bd32-11e9-82af-84a6ec0d039b
-# &includeSettings=true
-# &start=ts_1565687084798
-# &threaded=true
-# &includeUserOptions=true&includeUserHighlighting=true
-# &lang=es
-# &ctag=comments_v2_templates
-# &APIKey=3_VjZL6dNEbebJWZu9Fa8JJuSZV00WJeDxEoQEbvVyi-0vOVjBGo7fwqGxuZRNOU5B
-# &cid=
-# &source=showCommentsUI
-# &sourceData=%7B%22categoryID%22%3A%22abcdigital%22%2C%22streamID%22%3A%224738aa6e-bd32-11e9-82af-84a6ec0d039b%22%7D
-# &sdk=js_latest
-# &authMode=cookie
-# &pageURL=https://www.abc.es/espana/madrid/abci-alerta-oleada-okupa-y-temor-desembarco-clan-gordos-vallecas-201908122252_noticia.html
-# &format=json
-# &callback=gigya.callback&context=R1013975035
-#
-
-#
-#
-#
-# sourceData: {"categoryID":"abcdigital","streamID":"4738aa6e-bd32-11e9-82af-84a6ec0d039b"}
-#
-#
-#
-# categoryID=abcdigital&streamID=4738aa6e-bd32-11e9-82af-84a6ec0d039b&includeSettings=true&start=ts_1565703882645&threaded=true&includeUserOptions=true&includeUserHighlighting=true&lang=es&ctag=comments_v2_templates&APIKey=3_VjZL6dNEbebJWZu9Fa8JJuSZV00WJeDxEoQEbvVyi-0vOVjBGo7fwqGxuZRNOU5B&cid=&source=showCommentsUI&sourceData=%7B%22categoryID%22%3A%22abcdigital%22%2C%22streamID%22%3A%224738aa6e-bd32-11e9-82af-84a6ec0d039b%22%7D&sdk=js_latest&authMode=cookie&pageURL=https%3A%2F%2Fwww.abc.es%2Fespana%2Fmadrid%2Fabci-alerta-oleada-okupa-y-temor-desembarco-clan-gordos-vallecas-201908122252_noticia.html&format=jsonp&callback=gigya.callback&context=R717006144
-
-
-# https://gigya.abc.es/comments.getStreamInfo?categoryID=abcdigital&streamID=2b007c12-be83-11e9-ad48-1988f3591334&ctag=comments_v2_templates&APIKey=3_VjZL6dNEbebJWZu9Fa8JJuSZV00WJeDxEoQEbvVyi-0vOVjBGo7fwqGxuZRNOU5B&cid=&source=showCommentsUI&sourceData=%7B%22categoryID%22%3A%22abcdigital%22%2C%22streamID%22%3A%222b007c12-be83-11e9-ad48-1988f3591334%22%7D&sdk=js_latest&authMode=cookie&pageURL=https%3A%2F%2Fwww.abc.es%2Fespana%2Fmadrid%2Fabci-isabel-diaz-ayuso-investida-presidenta-comunidad-madrid-201908141807_noticia.html&format=jsonp&callback=gigya.callback&context=R1873278276
-## getInfo
-# categoryID: abcdigital
-# streamID: 2b007c12-be83-11e9-ad48-1988f3591334
-# ctag: comments_v2_templates
-# APIKey: 3_VjZL6dNEbebJWZu9Fa8JJuSZV00WJeDxEoQEbvVyi-0vOVjBGo7fwqGxuZRNOU5B
-# cid:
-# source: showCommentsUI
-# sourceData: {"categoryID":"abcdigital","streamID":"2b007c12-be83-11e9-ad48-1988f3591334"}
-# sdk: js_latest
-# authMode: cookie
-# pageURL: https://www.abc.es/espana/madrid/abci-isabel-diaz-ayuso-investida-presidenta-comunidad-madrid-201908141807_noticia.html
-# format: jsonp
-# callback: gigya.callback
-# context: R1873278276
-
-
-
 
 
 
