@@ -152,7 +152,7 @@ class WebPage(QtWebEngineWidgets.QWebEnginePage):
                         commentsResponse = json.loads(responseComments.text)
                         iterate = commentsResponse["hasMore"]
                         nextTs = commentsResponse["next"]
-                        pageComments = pageComments + extractComments(commentsResponse["comments"])
+                        pageComments = pageComments + extractComments(commentsResponse["comments"], url)
                     print(" \t -> retrieved total of {} comments".format(len(pageComments)))
                     print(
                         "#############################################################################################")
