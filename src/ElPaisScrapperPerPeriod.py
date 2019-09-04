@@ -235,9 +235,11 @@ class WebPage(QtWebEngineWidgets.QWebEnginePage):
             elif (self._currentStage == GET_COMMENTS_STATE):
                 logging.info(" -> url will be processed to extract content and comments: {}".format(url))
                 logging.info(" -> url to extract comments: {}".format(url))
-                self._newsAndComments = self._newsAndComments + lookupForComments(renderedPage, url)
-                logging.info(" -> url to extract content: {}".format(url))
-                self._newsAndContent = self._newsAndContent + extractContent(renderedPage, url)
+                commentsFound = lookupForComments(renderedPage, url)
+                if len(commentsFound) > 0:
+                    self._newsAndComments = self._newsAndComments + commentsFound
+                    logging.debug(" -> url to extract content: {}".format(url))
+                    self._newsAndContent = self._newsAndContent + extractContent(renderedPage, url)
                 logging.info(" -> url has been processed: {}".format(url))
 
             else:

@@ -11,7 +11,7 @@ from datetime import date, datetime, timedelta
 urlInfoComments = "https://comments.eu1.gigya.com/comments.getStreamInfo"
 urlGetComments = "https://comments.eu1.gigya.com/comments.getComments"
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(filename="{}-{}.log".format(__name__, datetime.today().strftime("%H%M%S")), level=logging.INFO)
 
 GET_URLS_STATE = "getUrls"
 GET_COMMENTS_STATE = "getComments"
@@ -120,7 +120,7 @@ def lookupForComments(renderedPage, url):
                 commentsResponse = json.loads(responseComments.text)
                 iterate = commentsResponse["hasMore"]
                 nextTs = commentsResponse["next"]
-                pageComments = pageComments + extractComments(commentsResponse["comments"])
+                pageComments = pageComments + extractComments(commentsResponse["comments"], url)
             logging.debug(" \t -> retrieved total of {} comments".format(len(pageComments)))
             logging.debug("#############################################################################################")
     return pageComments
@@ -256,7 +256,7 @@ class WebPage(QtWebEngineWidgets.QWebEnginePage):
                 logging.debug(" -> url to extract comments: {}".format(url))
                 commentsFound = lookupForComments(renderedPage, url)
                 if len(commentsFound) > 0:
-                    self._newsAndComments = self._newsAndComments + lookupForComments(renderedPage, url)
+                    self._newsAndComments = self._newsAndComments + commentsFound
                     logging.debug(" -> url to extract content: {}".format(url))
                     self._newsAndContent = self._newsAndContent + extractContent(renderedPage, url)
                 logging.debug(" -> url has been processed: {}".format(url))
@@ -285,14 +285,15 @@ class WebPage(QtWebEngineWidgets.QWebEnginePage):
 ####################################################################################
 dateFormat = "%Y/%m/%-d"
 initDateStr = "01/01/2019"
-endDateStr = "31/01/2019"
-totalPerido = "{}-{}".format(initDateStr.replace("/", ""), endDateStr.replace("/", ""))
+endDateStr = "01/01/2019"
+totalPeriod = "{}-{}".format(initDateStr.replace("/", ""), endDateStr.replace("/", ""))
 media = "20minutos"
 
-initDateArr = initDateStr.split("/").reverse()
-endDateArr = endDateStr.split("/").reverse()
+initDateArr = initDateStr.split("/")
+endDateArr = endDateStr.split("/")
 
-
+initDateArr.reverse()
+endDateArr.reverse()
 
 datesBase = generateDates(
     date(int(initDateArr[0]), int(initDateArr[1]), int(initDateArr[2])),
@@ -309,5 +310,5 @@ exportDataJSON(urlsPerDay, "urlPerDay")
 
 app = QtWidgets.QApplication(sys.argv)
 webpage = WebPage()
-webpage.start(urlsPerDay, media, )
+webpage.start(urlsPerDay, media, totalPeriod)
 sys.exit(app.exec_())
