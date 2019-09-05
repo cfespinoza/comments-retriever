@@ -14,8 +14,6 @@ class VeinteMinutosScrapper(BasicScrapper.BasicScrapper):
         self.urlInfoComments = "https://comments.eu1.gigya.com/comments.getStreamInfo"
         self.urlGetComments = "https://comments.eu1.gigya.com/comments.getComments"
 
-
-
     def initialize(self, begin="01/01/2019", end="01/01/2019", rootPath=None):
         self.start("https://www.20minutos.es/archivo/{date}/", "20minutos", begin, end, rootPath, "%Y/%m/%-d", [])
 
