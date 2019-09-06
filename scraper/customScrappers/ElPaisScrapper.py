@@ -5,7 +5,7 @@ import logging
 import requests
 from datetime import date, datetime, timedelta
 import json
-import random
+from random import random
 
 class ElPaisScrapper(BasicScrapper.BasicScrapper):
 
@@ -14,6 +14,7 @@ class ElPaisScrapper(BasicScrapper.BasicScrapper):
         super().__init__()
         self.urlInfoComments = "https://elpais.com/ThreadeskupSimple"
         self.urlGetComments = "https://elpais.com/OuteskupSimple"
+        self._urlXpathQuery = "//a/@href"
 
     def initialize(self, begin="01/01/2019", end="31/08/2019", rootPath=None):
         self.start("https://elpais.com/hemeroteca/elpais/{date}/{partOfDay}/portada.html", "elpais", begin, end, rootPath, "%Y/%m/%-d", ["m", "t", "n"])

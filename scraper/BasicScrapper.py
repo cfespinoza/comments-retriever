@@ -27,6 +27,7 @@ class BasicScrapper(QtWebEngineWidgets.QWebEnginePage):
         self._currentDateKey = ""
         self._urlInfoComments = ""
         self._urlGetComments = ""
+        self._urlXpathQuery = ""
         self._baseUrls = []
         self._GET_URLS_STATE = "getUrls"
         self._GET_COMMENTS_STATE = "getComments"
@@ -132,7 +133,7 @@ class BasicScrapper(QtWebEngineWidgets.QWebEnginePage):
             if (self._currentStage == self._GET_URLS_STATE):
                 # in this stage the program is trying to extract urls for news
                 logging.debug(" -> processing base URL: {}".format(url))
-                auxLinks = renderedPage.xpath("//ul[@class='normal-list']//a/@href")
+                auxLinks = renderedPage.xpath(self._urlXpathQuery)
                 # filter urls
                 finalLinks = self.filterUrls(links=auxLinks)
                 logging.debug(" -> TOtal of url retrieved to extract comments: {}".format(len(finalLinks)))
@@ -157,7 +158,9 @@ class BasicScrapper(QtWebEngineWidgets.QWebEnginePage):
         else:
             logging.warning(" -> Something is wrong. Empty html retrieved from url {}".format(url))
 
-        self._processedUrls.append(url)
+        # clear history in order to trying to avoid memory leak
+        self.history().clear()
+
         if not self.fetchNext():
             QtWidgets.qApp.quit()
 
