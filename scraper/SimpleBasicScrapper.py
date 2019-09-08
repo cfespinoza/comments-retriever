@@ -1,6 +1,7 @@
 import csv
 import json
 import logging
+import os
 import sys
 from datetime import date, datetime, timedelta
 
@@ -32,6 +33,7 @@ class SimpleScrapper():
         self._baseUrls = []
         self._GET_URLS_STATE = "getUrls"
         self._GET_COMMENTS_STATE = "getComments"
+        self._NEWS_LINKS_PER_DAY = "news-links-per-day"
         self._currentStage = self._GET_URLS_STATE
         self._currentUrl = ""
 
@@ -43,12 +45,9 @@ class SimpleScrapper():
         self._endPeriod = endPeriod
         self._dateFormat = dateFormatStr
         self._rootPath = rootPath
-        self._datesArr = self.generateDates(start=initPeriod, end=endPeriod, delta=1, dateFormat=self._dateFormat)
-        self._datesIt = iter(self._datesArr)
-        self._urlsPerDayObj = self.generateHemerotecaUrls(self._historicalRootUrl, self._datesArr, hemerotecaExtraInfo)
-        logging.basicConfig(filename="{}-{}.log".format(self._media, datetime.today().strftime("%H%M%S")),
-                            level=logging.INFO)
-        self.exportData(self._urlsPerDayObj, self._period, "webpages-per-day", "json")
+
+        self._period = "{}-{}".format(initPeriod.replace("/", ""), endPeriod.replace("/", ""))
+        self.initializeObject(initPeriod, endPeriod, hemerotecaExtraInfo)
         self.processCurrentPage()
 
     def fetchNext(self):
@@ -71,7 +70,7 @@ class SimpleScrapper():
                     # => in case of this code, proccessing datesIt has finished
                     #   it is time to change to next stage
                     self._currentStage = self._GET_COMMENTS_STATE
-                    self.exportData(self._newsUrlsPerDayObj, self._period, "news-links-per-day", "json")
+                    self.exportData(self._newsUrlsPerDayObj, self._period, self._NEWS_LINKS_PER_DAY, "json")
                     self._datesIt = iter(self._datesArr)
                     self._currentDateKey = next(self._datesIt)
                     # initialize variable for the next stage
@@ -111,12 +110,6 @@ class SimpleScrapper():
                 except StopIteration:
                     # => in case of this code, proccessing datesIt has finished
                     #   it is time to finish
-                    # comments
-                    self.exportData(self._commentsPerDay, self._currentDateKey, "comments", "json")
-                    self.exportData(self._commentsPerDay, self._currentDateKey, "comments", "csv")
-                    # contents
-                    self.exportData(self._contentPerDay, self._currentDateKey, "comments", "json")
-                    self.exportData(self._contentPerDay, self._currentDateKey, "comments", "csv")
                     return False
                 else:
                     return True
@@ -126,6 +119,31 @@ class SimpleScrapper():
             # State not supported
             return False
         return True
+
+    def initializeObject(self, initPeriod="", endPeriod="", hemerotecaExtraInfo=[]):
+        if self.existsNewsPerDayFile():
+            self.loadNewsPerDayFile()
+        else:
+            self._datesArr = self.generateDates(start=initPeriod, end=endPeriod, delta=1, dateFormat=self._dateFormat)
+            self._datesIt = iter(self._datesArr)
+            self._urlsPerDayObj = self.generateHemerotecaUrls(self._historicalRootUrl, self._datesArr, hemerotecaExtraInfo)
+            self.exportData(self._urlsPerDayObj, self._period, "webpages-per-day", "json")
+
+    def existsNewsPerDayFile(self):
+        filename = self.getFilename(self._period, self._NEWS_LINKS_PER_DAY, "json")
+        return os.path.isfile(filename)
+
+    def loadNewsPerDayFile(self):
+        filename = self.getFilename(self._period, self._NEWS_LINKS_PER_DAY, "json")
+        logging.info(" \t -> trying to load newsPerDayFile from path {}".format(filename))
+        with open(filename, 'r') as f:
+            self._newsUrlsPerDayObj = json.load(f)
+            self._datesArr = list(self._newsUrlsPerDayObj.keys())
+            self._datesIt = iter(self._datesArr)
+            self._currentDateKey = next(self._datesIt)
+            self._urlsPerDayIt = iter(list(dict.fromkeys(self._newsUrlsPerDayObj.get(self._currentDateKey, []))))
+            self._currentStage = self._GET_COMMENTS_STATE
+        logging.info(" \t -> newsPerDayFile has been loaded from path {}".format(filename))
 
     def processCurrentPage(self):
         while self.fetchNext():
@@ -179,17 +197,18 @@ class SimpleScrapper():
             curr += delta
         return dates
 
-    def exportData(self, data=None, dayData=None, typeData=None, format=None):
-        today = date.today()
-        currentDay = today.strftime("%d%m%Y")
+    def getFilename(self, dayData=None, typeData=None, format=None):
         formattedDay = dayData.replace("/", "-") if "/" in dayData else dayData
         fileName = "{rootPath}/{media}/{dataDay}-{dataType}.{fileFormat}".format(
-            rootPath=self._rootPath,
-            today=currentDay,
-            media=self._media,
-            dataDay=formattedDay,
-            dataType=typeData,
-            fileFormat=format)
+            rootPath = self._rootPath,
+            media = self._media,
+            dataDay = formattedDay,
+            dataType = typeData,
+            fileFormat = format)
+        return fileName
+
+    def exportData(self, data=None, dayData=None, typeData=None, format=None):
+        fileName = self.getFilename(dayData, typeData, format)
         logging.info(" \t data will be exported in {}".format(format))
         if format == "csv":
             with open(fileName, "w") as file:

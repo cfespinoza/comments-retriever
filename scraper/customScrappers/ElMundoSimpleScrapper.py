@@ -1,7 +1,9 @@
 import json
 import logging
 import sys
+import time
 from datetime import date, datetime
+from json import JSONDecodeError
 
 import requests
 
@@ -11,13 +13,14 @@ from scraper.SimpleBasicScrapper import SimpleScrapper
 class ElMundoSimpleScrapper(SimpleScrapper):
 
     def __init__(self):
-        self.logger = logging.getLogger("elmundo")
         super().__init__()
         self.urlGetComments = "https://www.elmundo.es/servicios/noticias/scroll/comentarios/comunidad/listar.html"
         self._urlXpathQuery = "//a/@href"
 
     def initialize(self, begin="01/01/2019", end="31/08/2019", rootPath=None):
         extraInfoHemeroteca = self.generateHemerotecaExtraInfo()
+        logging.basicConfig(filename="{}-{}.log".format("elmundo", datetime.today().strftime("%d%m%Y-%H%M%S")),
+                            level=logging.INFO)
         self.start("https://www.elmundo.es/elmundo/hemeroteca/{date}/{partOfDay}.html", "elmundo", begin, end, rootPath,
                    "%Y/%m/%d", extraInfoHemeroteca)
 
@@ -59,13 +62,15 @@ class ElMundoSimpleScrapper(SimpleScrapper):
                                             and "menu.html" not in link
                                             and "cgi.elmundo.es" not in link
                                             and "follow=1" not in link
+                                            and "?autoplay=true" not in link
+                                            and "mailto:?subject" not in link
                                             and self._currentDateKey in link]))
         return filteredLinks
 
     def extractComments(self, commentsList=None, urlNoticia=None, specialCase=None):
         logging.info(" \t -> parsing comments list with -{}- elements:".format(len(commentsList)))
         parsedComments = []
-        listToParse = commentsList[1] if specialCase else commentsList
+        listToParse = commentsList[1] if specialCase and len(commentsList) > 1 else commentsList
         for commentObj in listToParse:
             parsedComment = {
                 "urlNoticia": urlNoticia,
@@ -99,8 +104,18 @@ class ElMundoSimpleScrapper(SimpleScrapper):
             logging.info(" \t idNoticia found: {}".format(idNoticia))
             params = {"noticia": idNoticia, "version": "v2"}
             response = requests.get(self.urlGetComments, params)
-            responseDecoded = json.loads(response.text)
-            logging.info(responseDecoded)
+            if response.status_code != 200:
+                logging.error(" \t something when wrong retrieving comments from idNoticia {}".format(idNoticia))
+                logging.info(" \t retrieving comments from idNoticia {} return status_code {}".format(idNoticia, response.status_code))
+                time.sleep(5)
+                response = requests.get(self.urlGetComments, params)
+            responseDecoded = {}
+            try:
+                responseDecoded = json.loads(response.text)
+            except JSONDecodeError as e:
+                logging.error(str(e))
+
+            logging.debug(responseDecoded)
             iterate = responseDecoded["lastPage"]
             total = responseDecoded["total"]
             logging.info(" -> retrieved total of comments: {}".format(total))
@@ -156,6 +171,6 @@ class ElMundoSimpleScrapper(SimpleScrapper):
 
 
 scrapper = ElMundoSimpleScrapper()
-scrapper.initialize(begin="01/01/2019", end="31/03/2019",
+scrapper.initialize(begin="05/01/2019", end="31/03/2019",
                     rootPath="/home/cflores/cflores_workspace/comments-retriever/results")
 sys.exit(0)

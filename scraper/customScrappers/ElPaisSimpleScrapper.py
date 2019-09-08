@@ -21,6 +21,8 @@ class ElPaisScrapper(SimpleScrapper):
         self._urlXpathQuery = "//a/@href"
 
     def initialize(self, begin="01/01/2019", end="31/08/2019", rootPath=None):
+        logging.basicConfig(filename="{}-{}.log".format("elpais", datetime.today().strftime("%d%m%Y-%H%M%S")),
+                            level=logging.INFO)
         self.start("https://elpais.com/hemeroteca/elpais/{date}/{partOfDay}/portada.html", "elpais", begin, end,
                    rootPath, "%Y/%m/%d", ["m", "t", "n"])
 
@@ -130,7 +132,7 @@ class ElPaisScrapper(SimpleScrapper):
         return parsedComments
 
     def lookupForComments(self, renderedPageHtml=None, url=None):
-        time.sleep(1)
+        time.sleep(2)
         commentElList = renderedPageHtml.xpath("//span[@class='boton-contador']")
         pageComments = []
         if (len(commentElList) > 0):
@@ -216,6 +218,6 @@ class ElPaisScrapper(SimpleScrapper):
 
 
 scrapper = ElPaisScrapper()
-scrapper.initialize(begin="10/05/2019", end="31/08/2019",
+scrapper.initialize(begin="01/01/2019", end="08/04/2019",
                     rootPath="/home/cflores/cflores_workspace/comments-retriever/results")
 sys.exit(0)

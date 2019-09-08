@@ -171,6 +171,6 @@ class VeinteMinutosScrapper(SimpleScrapper):
 
 ## launch app
 scrapper = VeinteMinutosScrapper()
-scrapper.initialize(begin="23/08/2019", end="31/08/2019", rootPath="/home/cflores/cflores_workspace/comments-retriever/results")
+scrapper.initialize(begin="31/08/2019", end="31/08/2019", rootPath="/home/cflores/cflores_workspace/comments-retriever/results")
 sys.exit(0)
 
