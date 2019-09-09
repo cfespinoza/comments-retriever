@@ -218,6 +218,6 @@ class ElPaisScrapper(SimpleScrapper):
 
 
 scrapper = ElPaisScrapper()
-scrapper.initialize(begin="01/01/2019", end="08/04/2019",
+scrapper.initialize(begin="12/02/2019", end="08/04/2019",
                     rootPath="/home/cflores/cflores_workspace/comments-retriever/results")
 sys.exit(0)

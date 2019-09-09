@@ -41,7 +41,6 @@ class ElMundoSimpleScrapper(SimpleScrapper):
             date(int(endDateArr[0]), int(endDateArr[1]), int(endDateArr[2])),
             strFormat=dateFormat)
         return datesBase
-        pass
 
     def generateHemerotecaUrls(self, urlBase=None, dates=None, extraInfo=None):
         # https://www.elmundo.es/elmundo/hemeroteca/2019/01/01/m/economia.html
@@ -64,6 +63,7 @@ class ElMundoSimpleScrapper(SimpleScrapper):
                                             and "follow=1" not in link
                                             and "?autoplay=true" not in link
                                             and "mailto:?subject" not in link
+                                            and ".pdf" not in link
                                             and self._currentDateKey in link]))
         return filteredLinks
 
@@ -171,6 +171,6 @@ class ElMundoSimpleScrapper(SimpleScrapper):
 
 
 scrapper = ElMundoSimpleScrapper()
-scrapper.initialize(begin="05/01/2019", end="31/03/2019",
+scrapper.initialize(begin="04/06/2019", end="31/08/2019",
                     rootPath="/home/cflores/cflores_workspace/comments-retriever/results")
 sys.exit(0)

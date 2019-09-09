@@ -148,8 +148,15 @@ class SimpleScrapper():
     def processCurrentPage(self):
         while self.fetchNext():
             logging.info(" -> trying to render url: {}".format(self._currentUrl))
-            html = requests.get(self._currentUrl)
-            if html.text != "":
+            html = None
+            try:
+                html = requests.get(self._currentUrl)
+            except Exception as e:
+                logging.error(str(e))
+                logging.error(" \t -> there was an error while making request to {}".format(self._currentUrl))
+                logging.error(" \t -> Url -{}- will not be processed".format(self._currentUrl))
+
+            if html != None and html.text != "":
                 renderedPage = htmlRenderer.fromstring(html.text)
 
                 if (self._currentStage == self._GET_URLS_STATE):
@@ -254,4 +261,7 @@ class SimpleScrapper():
         raise NotImplementedError("Method must be implemented in subclass")
 
     def extractContent(self, renderedPage=None, url=None):
+        raise NotImplementedError("Method must be implemented in subclass")
+
+    def generateHemerotecaExtraInfo(self):
         raise NotImplementedError("Method must be implemented in subclass")
