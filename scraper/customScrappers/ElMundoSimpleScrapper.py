@@ -168,9 +168,3 @@ class ElMundoSimpleScrapper(SimpleScrapper):
             extraInfo = extraInfo + ["{}/{}".format(p, s) for p in partOfDay]
 
         return extraInfo
-
-
-scrapper = ElMundoSimpleScrapper()
-scrapper.initialize(begin="04/06/2019", end="31/08/2019",
-                    rootPath="/home/cflores/cflores_workspace/comments-retriever/results")
-sys.exit(0)

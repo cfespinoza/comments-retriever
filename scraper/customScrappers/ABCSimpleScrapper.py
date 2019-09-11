@@ -177,8 +177,3 @@ class ABCSimpleScrapper(SimpleScrapper):
             if commentObj.get("replies") != None:
                 parsedComments = parsedComments + self.extractComments(commentObj.get("replies"), urlNoticia)
         return parsedComments
-
-## launch app
-scrapper = ABCSimpleScrapper()
-scrapper.initialize(begin="31/01/2019", end="31/08/2019", rootPath="/home/cflores/cflores_workspace/comments-retriever/results")
-sys.exit(0)

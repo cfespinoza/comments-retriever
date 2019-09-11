@@ -9,7 +9,7 @@ from PyQt5 import QtWidgets
 from scraper.SimpleBasicScrapper import SimpleScrapper
 
 
-class VeinteMinutosScrapper(SimpleScrapper):
+class VeinteMinutosSimpleScrapper(SimpleScrapper):
 
     def __init__(self):
         self.logger = logging.getLogger("20minutos")
@@ -167,10 +167,3 @@ class VeinteMinutosScrapper(SimpleScrapper):
                 logging.debug(
                     "#############################################################################################")
         return pageComments
-
-
-## launch app
-scrapper = VeinteMinutosScrapper()
-scrapper.initialize(begin="31/08/2019", end="31/08/2019", rootPath="/home/cflores/cflores_workspace/comments-retriever/results")
-sys.exit(0)
-

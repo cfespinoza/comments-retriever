@@ -125,8 +125,9 @@ class SimpleScrapper():
             self.loadNewsPerDayFile()
         else:
             self._datesArr = self.generateDates(start=initPeriod, end=endPeriod, delta=1, dateFormat=self._dateFormat)
-            self._datesIt = iter(self._datesArr)
             self._urlsPerDayObj = self.generateHemerotecaUrls(self._historicalRootUrl, self._datesArr, hemerotecaExtraInfo)
+            self._datesArr = list(self._urlsPerDayObj.keys())
+            self._datesIt = iter(self._datesArr)
             self.exportData(self._urlsPerDayObj, self._period, "webpages-per-day", "json")
 
     def existsNewsPerDayFile(self):

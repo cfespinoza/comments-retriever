@@ -11,7 +11,7 @@ import requests
 from scraper.SimpleBasicScrapper import SimpleScrapper
 
 
-class ElPaisScrapper(SimpleScrapper):
+class ElPaisSimpleScrapper(SimpleScrapper):
 
     def __init__(self):
         self.logger = logging.getLogger("elpais")
@@ -215,9 +215,3 @@ class ElPaisScrapper(SimpleScrapper):
             "content": contentStr
         }
         return [content]
-
-
-scrapper = ElPaisScrapper()
-scrapper.initialize(begin="12/02/2019", end="08/04/2019",
-                    rootPath="/home/cflores/cflores_workspace/comments-retriever/results")
-sys.exit(0)
