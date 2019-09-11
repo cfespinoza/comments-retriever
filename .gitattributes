@@ -1,0 +1,10 @@
+results/20minutos/20minutos-01012019-31082019-comments.csv filter=lfs diff=lfs merge=lfs -text
+results/20minutos/20minutos-01012019-31082019-contents.csv filter=lfs diff=lfs merge=lfs -text
+results/abc/abc-01012019-31082019-comments.csv filter=lfs diff=lfs merge=lfs -text
+results/abc/abc-01012019-31082019-contents.csv filter=lfs diff=lfs merge=lfs -text
+results/elmundo/elmundo-01012019-31082019-comments.csv filter=lfs diff=lfs merge=lfs -text
+results/elmundo/elmundo-01012019-31082019-contents.csv filter=lfs diff=lfs merge=lfs -text
+results/elpais/elpais-01012019-31082019-comments.csv filter=lfs diff=lfs merge=lfs -text
+results/elpais/elpais-01012019-31082019-contents.csv filter=lfs diff=lfs merge=lfs -text
+results/lavanguardia/lavanguardia-01012019-31082019-comments.csv filter=lfs diff=lfs merge=lfs -text
+results/lavanguardia/lavanguardia-01012019-31082019-contents.csv filter=lfs diff=lfs merge=lfs -text
