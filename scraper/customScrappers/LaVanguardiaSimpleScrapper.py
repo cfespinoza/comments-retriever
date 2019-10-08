@@ -5,6 +5,7 @@ import sys
 from datetime import date, datetime
 
 import requests
+import time
 from dateutil import parser
 
 from scraper.SimpleBasicScrapper import SimpleScrapper
@@ -15,10 +16,10 @@ class LaVanguardiaSimpleScrapper(SimpleScrapper):
     def __init__(self):
         self.logger = logging.getLogger("lavanguardia")
         super().__init__()
-        self._urlInfoComments = "https://grupogodo1.bootstrap.fyre.co/api/v1.1/public/comments/ncomments/{}.json"
-        self._urlGetComments = "https://data.livefyre.com/bs3/v3.1/grupogodo1.fyre.co/{}/{}/init"
-        self._urlXpathQuery = "//div[@class='main']//i/@data-href"
 
+        self._urlInfoComments = "https://data.livefyre.com/bs3/v3.1/grupogodo1.fyre.co/{}/{}/init"
+        self._urlGetComments = "https://data.livefyre.com/bs3/v3.1/grupogodo1.fyre.co/{}/{}/{}.json"
+        self._urlXpathQuery = "//div[@class='main']//i/@data-href"
 
     def initialize(self, begin="01/01/2019", end="31/08/2019", rootPath=None):
         logging.basicConfig(filename="{}-{}.log".format("lavanguardia", datetime.today().strftime("%d%m%Y-%H%M%S")),
@@ -38,7 +39,8 @@ class LaVanguardiaSimpleScrapper(SimpleScrapper):
             strFormat=dateFormat)
         return datesBase
 
-    def generateHemerotecaUrls(self, urlBase="https://web.archive.org/web/{timestamp}/https://www.lavanguardia.com/", dates=None, extraInfo=None):
+    def generateHemerotecaUrls(self, urlBase="https://web.archive.org/web/{timestamp}/https://www.lavanguardia.com/",
+                               dates=None, extraInfo=None):
         # urlBase = "https://web.archive.org/web/{timestamp}/https://www.lavanguardia.com/"
         beginDate = dates[0]
         endDate = dates[len(dates) - 1]
@@ -82,7 +84,8 @@ class LaVanguardiaSimpleScrapper(SimpleScrapper):
                 finalLinks.append(urlBase.format(l))
 
         logging.info(" -> TOtal of url retrieved to extract comments: {}".format(len(finalLinks)))
-        logging.info("==================================================================================================")
+        logging.info(
+            "==================================================================================================")
         return list(dict.fromkeys(finalLinks))
 
     def extractComments(self, commentsList=None, authorObjectList=None, urlNoticia=None, specialCase=None):
@@ -121,36 +124,68 @@ class LaVanguardiaSimpleScrapper(SimpleScrapper):
                 urlParam = "{}:{}".format(commentSiteId, commentArticleId)
                 urlParamBase64 = str(base64.b64encode(urlParam.encode("utf-8")), "utf-8")
                 commentElArticleIdEncoded = str(base64.b64encode(commentArticleId.encode("utf-8")), "utf-8")
-                urlInfoCommentsEncoded = self._urlInfoComments.format(urlParamBase64)
+                urlInfoCommentsEncoded = self._urlInfoComments.format(commentSiteId, commentElArticleIdEncoded)
                 logging.info(" \t-> getting information for article: {}".format(urlInfoCommentsEncoded))
                 responseInfoComments = requests.get(urlInfoCommentsEncoded)
                 infoComments = json.loads(responseInfoComments.text)
-                if commentSiteId in infoComments["data"] \
-                        and commentArticleId in infoComments["data"][commentSiteId] \
-                        and infoComments["data"][commentSiteId][commentArticleId]["total"] > 0:
+                if "collectionSettings" in infoComments and \
+                        infoComments["collectionSettings"]["numVisible"] > 0:
                     # La info dice que hay comentarios, se procede a obtenerlos
+                    pages = infoComments["collectionSettings"]["archiveInfo"]["nPages"]
                     logging.info(" \t-> total of comments for current article: {}".format(
-                        infoComments["data"][commentSiteId][commentArticleId]["total"]))
-                    urlGetCommentsEncoded = self._urlGetComments.format(commentSiteId, commentElArticleIdEncoded)
-                    logging.info(" \t -> getting comments with url: {}".format(urlGetCommentsEncoded))
-                    responseComments = requests.get(urlGetCommentsEncoded)
-                    commentsResponse = json.loads(responseComments.text)
-                    pageComments = self.extractComments(commentsResponse["headDocument"]['content'],
-                                                   commentsResponse["headDocument"]['authors'], url)
-                    logging.info(" \t -> retrieved total of {} comments".format(len(pageComments)))
-                    logging.info(
-                        "#############################################################################################")
+                        infoComments["collectionSettings"]["numVisible"]))
+                    logging.info(" \t-> total of pages for current article: {}".format(pages))
+
+                    for page in range(pages):
+                        urlGetCommentsEncoded = self._urlGetComments.format(commentSiteId, commentElArticleIdEncoded, page)
+                        logging.info(" \t -> getting comments with url: {}".format(urlGetCommentsEncoded))
+                        responseComments = requests.get(urlGetCommentsEncoded)
+                        if responseComments.status_code != 200:
+                            logging.info(" \t -> status code in latest request returned {}".format(responseComments.status_code))
+                            logging.info(" \t -> response returned: \n {}".format(responseComments))
+                            logging.info(" \t ==>> sleep while few seconds ")
+                            time.sleep(5)
+                            responseComments = requests.get(urlGetCommentsEncoded)
+
+                        commentsResponse = json.loads(responseComments.text)
+                        pageComments = pageComments + self.extractComments(commentsResponse['content'],
+                                                                      commentsResponse['authors'], url)
+                else:
+                    logging.info(" \t -> no comments info found, pages without comments")
+        logging.info(" \t -> retrieved total of {} comments".format(len(pageComments)))
+        logging.info(
+            "#############################################################################################")
         return pageComments
 
-    def extractContent(self, renderedPage=None, url=None):
-        commentsElList = renderedPage.xpath("//div[@class='content-structure ']//p")
-        contentArr = []
-        for p in commentsElList:
-            contentArr.append(p.text_content())
+    def get_title(self, renderedPage=None, url=None):
+        queryXpath = "//article//h1"
+        el = renderedPage.xpath(queryXpath)
+        title = url
+        if len(el) == 0:
+            print(" -> title not found in: {}".format(url))
+        else:
+            title = el[0].text
+        return title
 
-        contentStr = "".join([parrafo for parrafo in contentArr])
+    def extractContent(self, renderedPage=None, url=None):
+        queries_xpath = ["//div[@class='content-structure ']//p",
+                         "//div[@itemprop='articleBody']//p"]
+        contentStr = ""
+        for q in queries_xpath:
+            commentsElList = renderedPage.xpath(q)
+            if len(commentsElList) > 0:
+                contentArr = []
+                for p in commentsElList:
+                    contentArr.append(p.text_content())
+                contentStr = "".join([parrafo for parrafo in contentArr])
+                break
+        if not contentStr:
+            print("\t -> url has not content found {}".format(url))
+
+        title = self.get_title(renderedPage, url)
         content = {
             "url": url,
-            "content": contentStr
+            "content": contentStr,
+            "title": title
         }
         return [content]

@@ -1,3 +1,5 @@
+#!/bin/python
+
 import json
 import logging
 import sys, getopt
@@ -8,6 +10,7 @@ from scraper.customScrappers.ABCSimpleScrapper import ABCSimpleScrapper
 from scraper.customScrappers.ElPaisSimpleScrapper import ElPaisSimpleScrapper
 from scraper.customScrappers.VeinteMinutosSimpleScrapper import VeinteMinutosSimpleScrapper
 
+
 # {
 #     "media": "",
 #     "begin": "",
@@ -15,6 +18,7 @@ from scraper.customScrappers.VeinteMinutosSimpleScrapper import VeinteMinutosSim
 #     "resultsPath": ""
 #     "news_file": ""
 # }
+logging.basicConfig(level=logging.INFO)
 
 def get_opts(argv):
     config_file = ''
@@ -33,9 +37,12 @@ def get_opts(argv):
     logging.info("config_file path is {}".format(config_file))
     return config_file
 
+
 def main(argv):
     config_file = get_opts(argv)
-    config_obj = json.loads(config_file)
+    config_obj = None
+    with open(config_file, 'r') as file:
+        config_obj = json.load(file)
     scrapper = None
     media = config_obj["media"]
     if media == "abc":
@@ -52,7 +59,14 @@ def main(argv):
         logging.error("{} media is not supported".format(media))
         sys.exit(-1)
 
-    # TODO call to start scrapping
+    # assuming the date is set in correct format
+    try:
+        scrapper.initialize(begin=config_obj["begin"], end=config_obj["end"], rootPath=config_obj["resultsPath"])
+    except Exception as e:
+        logging.error("Execution has failed...")
+        e.with_traceback()
+        logging.error(str(e))
+
 
 if __name__ == "__main__":
     main(sys.argv[1:])

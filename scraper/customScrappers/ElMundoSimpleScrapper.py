@@ -95,6 +95,24 @@ class ElMundoSimpleScrapper(SimpleScrapper):
         }
         return [content]
 
+    def extractCommentFromHtml(self, renderedPageHtml=None, url=None):
+        #       extract comment from html page
+        user = renderedPageHtml.xpath("//aside[@id='ancla_comentarios']//div[@class='autor ']/text()")[0]
+        hora = renderedPageHtml.xpath("//aside[@id='ancla_comentarios']//span[@class='hora']/text()")[0]
+        fecha = renderedPageHtml.xpath("//aside[@id='ancla_comentarios']//span[@class='fecha']/text()")[0]
+        comentario = renderedPageHtml.xpath("//aside[@id='ancla_comentarios']//div[@class='texto-comentario']//p/text()")[0]
+        user = user.replace("\n", "")
+        hora = hora.replace("horas", "").strip()
+        parsedComment = {
+            "urlNoticia": url,
+            "fecha": fecha,
+            "hora": hora,
+            "user": user,
+            "commentario": comentario,
+            "order": 1
+        }
+        return [parsedComment]
+
     def lookupForComments(self, renderedPageHtml=None, url=None):
         totalComentarioElList = renderedPageHtml.find_class("js-ueCommentsCounter")  # find("js-ueCommentsCounter")
         pageComments = []
@@ -117,29 +135,30 @@ class ElMundoSimpleScrapper(SimpleScrapper):
 
             logging.debug(responseDecoded)
             iterate = responseDecoded["lastPage"]
-            total = responseDecoded["total"]
+            pageComments = self.extractComments(responseDecoded['items'], url)
+            if len(pageComments) == 0:
+                pageComments = self.extractCommentFromHtml(renderedPageHtml, url)
+            total = pageComments[0]["order"]
             logging.info(" -> retrieved total of comments: {}".format(total))
-            if (total > 0):
-                pageComments = self.extractComments(responseDecoded['items'], url)
-                while not iterate:
-                    logging.info(" - iterating...")
-                    logging.info(" -> total of comments: {}".format(len(pageComments)))
-                    nextComments = total - len(pageComments)
-                    specialCase = False
-                    if (nextComments == 1):
-                        logging.info(" -> special case, adding extra value in order to avoid wrong behaviour")
-                        specialCase = True
-                        nextComments = nextComments + 1
-                    logging.info(" -> next pagina: {}".format(nextComments))
-                    params = {"noticia": idNoticia, "version": "v2", "pagina": nextComments}
-                    response = requests.get(self.urlGetComments, params)
-                    responseDecoded = json.loads(response.text)
-                    pageComments = pageComments + self.extractComments(responseDecoded['items'], url, specialCase)
-                    iterate = responseDecoded["lastPage"]
-                    logging.info(
-                        "---------------------------------------------------------------------------------------------")
-                logging.info(" \t -> retrieved total of {} comments".format(len(pageComments)))
-                logging.info("#############################################################################################")
+            while not iterate:
+                logging.info(" - iterating...")
+                logging.info(" -> total of comments: {}".format(len(pageComments)))
+                nextComments = pageComments[len(pageComments)-1]["order"]
+                specialCase = False
+                if (nextComments == 1):
+                    logging.info(" -> special case, adding extra value in order to avoid wrong behaviour")
+                    specialCase = True
+                    nextComments = nextComments + 1
+                logging.info(" -> next pagina: {}".format(nextComments))
+                params = {"noticia": idNoticia, "version": "v2", "pagina": nextComments}
+                response = requests.get(self.urlGetComments, params)
+                responseDecoded = json.loads(response.text)
+                pageComments = pageComments + self.extractComments(responseDecoded['items'], url, specialCase)
+                iterate = responseDecoded["lastPage"]
+                logging.info(
+                    "---------------------------------------------------------------------------------------------")
+            logging.info(" \t -> retrieved total of {} comments".format(len(pageComments)))
+            logging.info("#############################################################################################")
         else:
             logging.warning(" \t -> there is something wrong due to commentsEl has not been found")
         return pageComments

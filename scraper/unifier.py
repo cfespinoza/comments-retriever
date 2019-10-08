@@ -13,7 +13,7 @@ from scraper.customScrappers.VeinteMinutosSimpleScrapper import VeinteMinutosSim
 ############################ commons params ######################################################
 resultPath = "/home/cflores/cflores_workspace/comments-retriever/results"
 begin = "01/01/2019"
-end = "31/08/2019"
+end = "15/09/2019"
 ##################################################################################################
 
 #######################################  20minutos ###############################################

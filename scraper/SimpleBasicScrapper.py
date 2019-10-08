@@ -92,10 +92,10 @@ class SimpleScrapper():
                     # it is time to change of day and export collected info
                     # comments
                     self.exportData(self._commentsPerDay, self._currentDateKey, "comments", "json")
-                    self.exportData(self._commentsPerDay, self._currentDateKey, "comments", "csv")
+                    # self.exportData(self._commentsPerDay, self._currentDateKey, "comments", "csv")
                     # contents
                     self.exportData(self._contentPerDay, self._currentDateKey, "contents", "json")
-                    self.exportData(self._contentPerDay, self._currentDateKey, "contents", "csv")
+                    # self.exportData(self._contentPerDay, self._currentDateKey, "contents", "csv")
                     del (self._contentPerDay)
                     del (self._commentsPerDay)
 
