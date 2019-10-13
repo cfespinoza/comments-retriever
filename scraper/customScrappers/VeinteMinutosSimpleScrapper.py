@@ -4,7 +4,6 @@ import sys
 from datetime import date, datetime
 
 import requests
-from PyQt5 import QtWidgets
 
 from scraper.SimpleBasicScrapper import SimpleScrapper
 
