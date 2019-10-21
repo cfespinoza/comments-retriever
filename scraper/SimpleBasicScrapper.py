@@ -3,7 +3,7 @@ import json
 import logging
 import os
 import sys
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 
 import requests
 from lxml import html as htmlRenderer
@@ -48,7 +48,12 @@ class SimpleScrapper():
 
         self._period = "{}-{}".format(initPeriod.replace("/", ""), endPeriod.replace("/", ""))
         self.initializeObject(initPeriod, endPeriod, hemerotecaExtraInfo)
-        self.processCurrentPage()
+        if self._currentDateKey:
+            logging.info(" \t retrieving comments from day: {}".format(self._currentDateKey))
+            self.processCurrentPage()
+        else:
+            logging.info(" \t nothing to process due to it seems comments and contents file have been downloaded "
+                         "previously for period: {}".format(self._period))
 
     def fetchNext(self):
         if self._currentStage == self._GET_URLS_STATE:
@@ -142,7 +147,21 @@ class SimpleScrapper():
             self._datesArr = list(self._newsUrlsPerDayObj.keys())
             self._datesIt = iter(self._datesArr)
             self._currentDateKey = next(self._datesIt)
-            self._urlsPerDayIt = iter(list(dict.fromkeys(self._newsUrlsPerDayObj.get(self._currentDateKey, []))))
+            comments_file = self.getFilename(self._currentDateKey, "comments", "json")
+            contents_file = self.getFilename(self._currentDateKey, "contents", "json")
+            still_search = True
+            while os.path.isfile(comments_file) and os.path.isfile(contents_file) and still_search:
+                logging.info(" \t -> comments file found: {}".format(comments_file))
+                logging.info(" \t -> contents file found: {}".format(contents_file))
+                try:
+                    self._currentDateKey = next(self._datesIt)
+                    comments_file = self.getFilename(self._currentDateKey, "comments", "json")
+                    contents_file = self.getFilename(self._currentDateKey, "contents", "json")
+                except StopIteration:
+                    logging.warning(" \t -> files found for whole period. ")
+                    self._currentDateKey = None
+                    still_search = False
+            self._urlsPerDayIt = iter(list(dict.fromkeys(self._newsUrlsPerDayObj.get(self._currentDateKey, [])))) if self._currentDateKey else []
             self._currentStage = self._GET_COMMENTS_STATE
         logging.info(" \t -> newsPerDayFile has been loaded from path {}".format(filename))
 
@@ -208,11 +227,11 @@ class SimpleScrapper():
     def getFilename(self, dayData=None, typeData=None, format=None):
         formattedDay = dayData.replace("/", "-") if "/" in dayData else dayData
         fileName = "{rootPath}/{media}/{dataDay}-{dataType}.{fileFormat}".format(
-            rootPath = self._rootPath,
-            media = self._media,
-            dataDay = formattedDay,
-            dataType = typeData,
-            fileFormat = format)
+            rootPath=self._rootPath,
+            media=self._media,
+            dataDay=formattedDay,
+            dataType=typeData,
+            fileFormat=format)
         return fileName
 
     def exportData(self, data=None, dayData=None, typeData=None, format=None):
@@ -237,6 +256,7 @@ class SimpleScrapper():
 
     def getDateFormat(self):
         return self._dateFormat
+
     ####################################################################
     ############ Method to be implemented for children classes
     ####################################################################
