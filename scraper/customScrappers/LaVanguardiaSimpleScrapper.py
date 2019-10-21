@@ -1,11 +1,10 @@
 import base64
 import json
 import logging
-import sys
+import time
 from datetime import date, datetime
 
 import requests
-import time
 from dateutil import parser
 
 from scraper.SimpleBasicScrapper import SimpleScrapper

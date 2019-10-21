@@ -144,12 +144,42 @@ class ABCSimpleScrapper(SimpleScrapper):
             logging.warning(" \t -> there is something wrong due to commentsEl has not been found")
         return pageComments
 
+    def getTitle(self, renderedPage=None, url=None):
+        queries_xpath = ["//span[@class='titular']",
+                         "//h1[@class='titular']",
+                         "//h1[@class='titular principal']"]
+
+        title = url
+        for q in queries_xpath:
+            el = renderedPage.xpath(q)
+            if len(el) > 0:
+                title = el[0].text if el[0].text != None else el[0].text_content()
+                break
+        if title == url:
+            logging.warning(" \t -> title not found for url {}".format(url))
+        return title
+
     def extractContent(self, renderedPage=None, url=None):
-        commentsElList = renderedPage.xpath("//span[@class='cuerpo-texto ']//p")
-        contentArr = []
-        for p in commentsElList:
-            contentArr.append(p.text_content())
-        contentStr = "".join([parrafo for parrafo in contentArr])
+        queries_xpath = ["//span[@class='cuerpo-texto ']//p",
+                         "//span[@class='cuerpo-texto  unreg']/p",
+                         "//span[@class='cuerpo-texto']/p",
+                         "//div[@id='tab_cronica']/p",
+                         "//span[@class='cuerpo-texto top-nuevo']//p",
+                         "//span[@class='contenido-top']//p",
+                         "//div[@id='tab_directo']//p",
+                         "//span[@class='cuerpo-texto directo']//p"]
+        contentStr = ""
+        for q in queries_xpath:
+            commentsElList = renderedPage.xpath(q)
+            if len(commentsElList) > 0:
+                contentArr = []
+                for p in commentsElList:
+                    contentArr.append(p.text_content())
+                contentStr = "".join([parrafo for parrafo in contentArr])
+                break
+        if not contentStr:
+            logging.warning("\t -> url has not content found {}".format(url))
+        title = self.getTitle(renderedPage, url)
         content = {
             "url": url,
             "content": contentStr

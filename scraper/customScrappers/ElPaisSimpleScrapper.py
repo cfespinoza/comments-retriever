@@ -204,14 +204,41 @@ class ElPaisSimpleScrapper(SimpleScrapper):
             logging.warning(" \t comments htmlEl has not been found in url: {}".format(url))
         return pageComments
 
+    def getTitle(self, renderedPage=None, url=None):
+        queries_xpath = ["//span[@class='titular']",
+                         "//h1[@class='titular']",
+                         "//h1[@class='titular principal']",
+                         "//h1[@id='articulo-titulo']"]
+        title = url
+        for q in queries_xpath:
+            el = renderedPage.xpath(q)
+            if len(el) > 0:
+                title = el[0].text if el[0].text != None else el[0].text_content()
+                break
+        if title == url:
+            print(" \t -> title not found for url {}".format(url))
+        return title
+
     def extractContent(self, renderedPage=None, url=None):
-        commentsElList = renderedPage.xpath("//div[@class='articulo-cuerpo'][@id='cuerpo_noticia']//p")
-        contentArr = []
-        for p in commentsElList:
-            contentArr.append(p.text_content())
-        contentStr = "".join([parrafo for parrafo in contentArr])
+        queries_xpath = ["//div[@class='articulo-cuerpo'][@id='cuerpo_noticia']//p",
+                         "//span[@class='cuerpo-texto ']//p",
+                         "//span[@class='cuerpo-texto  unreg']/p",
+                         "//span[@class='cuerpo-texto']/p"]
+        contentStr = ""
+        for q in queries_xpath:
+            commentsElList = renderedPage.xpath(q)
+            if len(commentsElList) > 0:
+                contentArr = []
+                for p in commentsElList:
+                    contentArr.append(p.text_content())
+                contentStr = "".join([parrafo for parrafo in contentArr])
+                break
+        if not contentStr:
+            logging.warning("\t -> url has not content found {}".format(url))
+        title = self.getTitle(renderedPage, url)
         content = {
             "url": url,
-            "content": contentStr
+            "content": contentStr,
+            "title": title
         }
         return [content]

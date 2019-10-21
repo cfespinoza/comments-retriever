@@ -1,6 +1,5 @@
 import json
 import logging
-import sys
 from datetime import date, datetime
 
 import requests
@@ -83,15 +82,38 @@ class VeinteMinutosSimpleScrapper(SimpleScrapper):
                 parsedComments = parsedComments + self.extractComments(commentObj.get("replies"), urlNoticia)
         return parsedComments
 
+    def getTitle(self, renderedPage=None, url=None):
+        queryXpath = "//div[@id='main']//h1[@class='article-title']"
+        el = renderedPage.xpath(queryXpath)
+        title = url
+        if len(el) == 0:
+            logging.warning(" -> title not found in: {}".format(url))
+        else:
+            title = el[0].text
+        return title
+
     def extractContent(self, renderedPage=None, url=None):
-        commentsElList = renderedPage.xpath("//div[@class='gtm-article-text']//p")
-        contentArr = []
-        for p in commentsElList:
-            contentArr.append(p.text_content())
-        contentStr = "".join([parrafo for parrafo in contentArr])
+        queries_xpath = ["//div[@class='gtm-article-text']//p",
+                         "//div[@class='gtm-article-text']//span",
+                         "//div[@class='gtm-article-text']/div[@class='gmail_default']"]
+
+        contentStr = ""
+        for q in queries_xpath:
+            commentsElList = renderedPage.xpath(q)
+            if len(commentsElList) > 0:
+                contentArr = []
+                for p in commentsElList:
+                    contentArr.append(p.text_content())
+                contentStr = "".join([parrafo for parrafo in contentArr])
+                break
+        if not contentStr:
+            logging.warning("\t -> url has not content found {}".format(url))
+
+        title = self.getTitle(renderedPage, url)
         content = {
             "url": url,
-            "content": contentStr
+            "content": contentStr,
+            "title": title
         }
         return [content]
 

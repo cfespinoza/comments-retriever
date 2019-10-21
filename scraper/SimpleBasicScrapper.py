@@ -235,6 +235,8 @@ class SimpleScrapper():
             logging.error(" \t {} format not supported".format(format))
         logging.debug(" \t -> exported data fileName: {}".format(fileName))
 
+    def getDateFormat(self):
+        return self._dateFormat
     ####################################################################
     ############ Method to be implemented for children classes
     ####################################################################
@@ -265,4 +267,7 @@ class SimpleScrapper():
         raise NotImplementedError("Method must be implemented in subclass")
 
     def generateHemerotecaExtraInfo(self):
+        raise NotImplementedError("Method must be implemented in subclass")
+
+    def getTitle(self, renderedPage=None, url=None):
         raise NotImplementedError("Method must be implemented in subclass")

@@ -83,15 +83,47 @@ class ElMundoSimpleScrapper(SimpleScrapper):
             parsedComments.append(parsedComment)
         return parsedComments
 
+    def getTitle(self, renderedPage=None, url=None):
+        queries_xpath = ["//div[@class='ue-l-article__header']//h1[@class='js-headline']",
+                         "//div[@class='ue-l-article__header']//h1[@class='ue-c-article__headline js-headline']",
+                         "//div[@class='titles']//h1[@class='js-headline']",
+                         "//div[@class='ue-l-article__header']//h1",
+                         "//h1[@class='ue-c-article__headline js-headline ']",
+                         "//h1[@itemprop='headline']"]
+
+        title = url
+        for q in queries_xpath:
+            el = renderedPage.xpath(q)
+            if len(el) > 0:
+                title = el[0].text
+                break
+        if title == url:
+            logging.warning(" \t -> title not found for url {}".format(url))
+        return title
+
     def extractContent(self, renderedPage=None, url=None):
-        commentsElList = renderedPage.xpath("//div[@data-section='articleBody']//p")
-        contentArr = []
-        for p in commentsElList:
-            contentArr.append(p.text_content())
-        contentStr = "".join([parrafo for parrafo in contentArr])
+        queries_xpath = ["//div[@data-section='articleBody']/p",
+                         "//div[@class='row content cols-70-30']/p",
+                         "//dl[@class='ue-c-article__interview']",
+                         "//ul[@class='ue-c-article__list ue-c-article__list--unordered']",
+                         "//dl[@class='interview']"]
+        contentStr = ""
+        for q in queries_xpath:
+            commentsElList = renderedPage.xpath(q)
+            if len(commentsElList) > 0:
+                contentArr = []
+                for p in commentsElList:
+                    contentArr.append(p.text_content())
+                contentStr = "".join([parrafo for parrafo in contentArr])
+                break
+        if not contentStr:
+            logging.warning("\t -> url has not content found {}".format(url))
+
+        title = self.getTitle(renderedPage, url)
         content = {
             "url": url,
-            "content": contentStr
+            "content": contentStr,
+            "title": title
         }
         return [content]
 
