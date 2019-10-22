@@ -29,6 +29,11 @@ def setup_package():
         version=ns['__version__'],
         keywords=['Interactive', 'Interpreter', 'Shell', 'Web'],
         classifiers=['Programming Language :: Python :: 3'],
+        entry_points={
+            'console_scripts': [
+                'scrapper = scraper.scrapper:main',
+            ]
+        }
     )
 
     setup(**metadata)

@@ -2,48 +2,6 @@ import csv
 import json
 import os
 
-from scraper.customScrappers.LaVanguardiaSimpleScrapper import LaVanguardiaSimpleScrapper
-from scraper.customScrappers.ABCSimpleScrapper import ABCSimpleScrapper
-from scraper.customScrappers.ElMundoSimpleScrapper import ElMundoSimpleScrapper
-from scraper.customScrappers.ElPaisSimpleScrapper import ElPaisSimpleScrapper
-from scraper.customScrappers.VeinteMinutosSimpleScrapper import VeinteMinutosSimpleScrapper
-
-############################ commons params ######################################################
-# resultPath = "/home/cflores/cflores_workspace/comments-retriever/results"
-# begin = "01/01/2019"
-# end = "15/09/2019"
-##################################################################################################
-
-#######################################  20minutos ###############################################
-# scrapper = VeinteMinutosSimpleScrapper()
-# media = "20minutos"
-# dateFormat = "%Y-%m-%-d"
-##################################################################################################
-
-########################################  ElMundo ################################################
-# scrapper = ElMundoSimpleScrapper()
-# media = "elmundo"
-# dateFormat = "%Y-%m-%d"
-##################################################################################################
-
-########################################  ElPais ################################################
-# scrapper = ElPaisSimpleScrapper()
-# media = "elpais"
-# dateFormat = "%Y-%m-%d"
-##################################################################################################
-
-##########################################  ABC ##################################################
-# scrapper = ABCSimpleScrapper()
-# media = "abc"
-# dateFormat = "%d-%m-%Y"
-##################################################################################################
-
-#####################################  LaVanguardia ##############################################
-# scrapper = LaVanguardiaSimpleScrapper()
-# media = "lavanguardia"
-# dateFormat = "%Y%m%d"
-##################################################################################################
-
 DATE_FORMATS = {
     "20minutos": "%Y-%m-%-d",
     "elmundo": "%Y-%m-%d",

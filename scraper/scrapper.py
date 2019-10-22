@@ -1,5 +1,4 @@
-#!/bin/python
-import csv
+import argparse
 import getopt
 import json
 import logging
@@ -19,64 +18,11 @@ from scraper.customScrappers.ElMundoSimpleScrapper import ElMundoSimpleScrapper
 from scraper.customScrappers.ElPaisSimpleScrapper import ElPaisSimpleScrapper
 from scraper.customScrappers.LaVanguardiaSimpleScrapper import LaVanguardiaSimpleScrapper
 from scraper.customScrappers.VeinteMinutosSimpleScrapper import VeinteMinutosSimpleScrapper
+from scraper.unifier import unify
 
 SUPPORTED_MEDIA = ["abc", "elmundo", "elpais", "20minutos", "lavanguardia"]
 logging.basicConfig(level=logging.INFO)
 
-
-DATE_FORMATS = {
-    "20minutos": "%Y-%m-%-d",
-    "elmundo": "%Y-%m-%d",
-    "elpais": "%Y-%m-%d",
-    "abc": "%d-%m-%Y",
-    "lavanguardia": "%Y%m%d"
-}
-
-
-def export(fileName, data):
-    with open(fileName, "w") as file:
-        csvwriter = csv.writer(file)
-        count = 0
-        for dataObj in data:
-            if count == 0:
-                header = dataObj.keys()
-                csvwriter.writerow(header)
-                count += 1
-            csvwriter.writerow(dataObj.values())
-
-
-def loadJsons(files):
-    all = []
-    for f in files:
-        if os.path.isfile(f):
-            with open(f) as file:
-                all = all + json.load(file)
-        else:
-            print(" \t -> file -{}- not found.".format(f))
-    return all
-
-
-def unify(begin, end, media, resultPath, scrapper):
-    date_format = DATE_FORMATS[media]
-    dates = scrapper.generateDates(start=begin, end=end, dateFormat=date_format)
-    period = "{}-{}".format(begin.replace("/", ""), end.replace("/", ""))
-
-    commentsFilesNames = ["{rootPath}/{media}/{date}-comments.json".format(rootPath=resultPath, media=media, date=d) for
-                          d in dates]
-    contentsFilesNames = ["{rootPath}/{media}/{date}-contents.json".format(rootPath=resultPath, media=media, date=d) for
-                          d in dates]
-
-    totalCommentsArr = loadJsons(commentsFilesNames)
-    totalContentsArr = loadJsons(contentsFilesNames)
-
-    comments_file_unified = "{rootPath}/{media}/{media}-{period}-comments.csv".format(rootPath=resultPath, media=media,
-                                                                                      period=period)
-    contents_file_unified = "{rootPath}/{media}/{media}-{period}-contents.csv".format(rootPath=resultPath, media=media,
-                                                                                      period=period)
-    export(comments_file_unified, totalCommentsArr)
-    export(contents_file_unified, totalContentsArr)
-
-    return comments_file_unified, contents_file_unified
 
 def _create_results_media_path(results_path, media):
     media_results_path = os.path.join(results_path, media)
@@ -94,39 +40,8 @@ def _create_results_media_path(results_path, media):
     return media_results_path
 
 
-def get_opts(argv):
-    config_file = None
-    begin = None
-    end = None
-    media = None
-    results_path = None
+def get_config_obj(config_file=None, begin=None, end=None, media=None, results_path=None):
     config_obj = None
-
-    try:
-        opts, args = getopt.getopt(argv, "hc:b:e:m:r:", ["config=", "begin=", "end=", "media=", "resultsPath="])
-    except getopt.GetoptError:
-        print(
-            'scrapper.py -b 01/01/2019 -e 31/01/2019 -m [elmundo|elpais|abc|20minutos|lavanguardia] -r <results_path>')
-        print('scrapper.py -c <config_file>')
-        sys.exit(2)
-
-    for opt, arg in opts:
-        if opt == '-h':
-            print(
-                'scrapper.py -b 01/01/2019 -e 31/01/2019 -m [elmundo|elpais|abc|20minutos|lavanguardia] -r <results_path>')
-            print('scrapper.py -c <config_file>')
-            sys.exit()
-        elif opt in ["-c", "--config"]:
-            config_file = arg
-        elif opt in ["-b", "--begin"]:
-            begin = arg
-        elif opt in ["-e", "--end"]:
-            end = arg
-        elif opt in ["-m", "--media"]:
-            media = arg
-        elif opt in ["-r", "--resultsPath"]:
-            results_path = arg
-
     logging.info("config_file found: {}".format(config_file))
     logging.info("begin found: {}".format(begin))
     logging.info("end found: {}".format(end))
@@ -153,6 +68,42 @@ def get_opts(argv):
     return config_obj
 
 
+def get_opts(argv):
+    config_file = None
+    begin = None
+    end = None
+    media = None
+    results_path = None
+
+    try:
+        opts, args = getopt.getopt(argv, "hc:b:e:m:r:", ["config=", "begin=", "end=", "media=", "resultsPath="])
+    except getopt.GetoptError:
+        print(
+            'scrapper.py -b 01/01/2019 -e 31/01/2019 -m [elmundo|elpais|abc|20minutos|lavanguardia] -r <results_path>')
+        print('scrapper.py -c <config_file>')
+        sys.exit(2)
+
+    for opt, arg in opts:
+        if opt == '-h':
+            print(
+                'scrapper.py -b 01/01/2019 -e 31/01/2019 -m [elmundo|elpais|abc|20minutos|lavanguardia] -r '
+                '<results_path>')
+            print('scrapper.py -c <config_file>')
+            sys.exit()
+        elif opt in ["-c", "--config"]:
+            config_file = arg
+        elif opt in ["-b", "--begin"]:
+            begin = arg
+        elif opt in ["-e", "--end"]:
+            end = arg
+        elif opt in ["-m", "--media"]:
+            media = arg
+        elif opt in ["-r", "--resultsPath"]:
+            results_path = arg
+
+    return get_config_obj(config_file, begin, end, media, results_path)
+
+
 def isValidDate(dateStr):
     isValid = False
     try:
@@ -168,9 +119,7 @@ def isValidDate(dateStr):
     return isValid
 
 
-def main(argv):
-    # config_file = get_opts(argv)
-    config_obj = get_opts(argv)
+def execute(config_obj=None):
     scrapper = None
     if config_obj:
         media = config_obj["media"]
@@ -206,5 +155,35 @@ def main(argv):
         sys.exit(-1)
 
 
+def _main(argv):
+    # config_file = get_opts(argv)
+    config_obj = get_opts(argv)
+    execute(config_obj)
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        prog='Scrapper',
+        usage='scrapper -b 01/01/2019 -e 31/01/2019 -m [elmundo|elpais|abc|20minutos|lavanguardia] -r <results_path>'
+    )
+
+    parser.add_argument('-b', '--begin', nargs='?', help='begin date of period to retrieve commments and contents')
+    parser.add_argument('-e', '--end', nargs='?', help='end date of period to retrieve commments and contents')
+    parser.add_argument('-m', '--media', nargs='?', help='media where comments and contents will be retrieved from')
+    parser.add_argument('-r', '--results_path', nargs='?', help='local path where result will be stored. the program '
+                                                                'will create folder for each media')
+
+    args = parser.parse_args()
+
+    collected_inputs = {
+        'begin': args.begin,
+        'end': args.end,
+        'media': args.media,
+        'results_path': args.results_path}
+
+    config_obj = get_config_obj(**collected_inputs)
+    execute(config_obj)
+
+
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    _main(sys.argv[1:])
