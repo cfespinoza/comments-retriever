@@ -1,8 +1,7 @@
 import json
 import logging
-import sys
 import time
-from datetime import date, datetime
+from datetime import date
 from json import JSONDecodeError
 
 import requests
@@ -16,11 +15,11 @@ class ElMundoSimpleScrapper(SimpleScrapper):
         super().__init__()
         self.urlGetComments = "https://www.elmundo.es/servicios/noticias/scroll/comentarios/comunidad/listar.html"
         self._urlXpathQuery = "//a/@href"
+        self.logger = logging.getLogger(self.__class__.__name__)
+        
 
     def initialize(self, begin="01/01/2019", end="31/08/2019", rootPath=None):
         extraInfoHemeroteca = self.generateHemerotecaExtraInfo()
-        logging.basicConfig(filename="{}-{}.log".format("elmundo", datetime.today().strftime("%d%m%Y-%H%M%S")),
-                            level=logging.INFO)
         self.start("https://www.elmundo.es/elmundo/hemeroteca/{date}/{partOfDay}.html", "elmundo", begin, end, rootPath,
                    "%Y/%m/%d", extraInfoHemeroteca)
 
@@ -45,11 +44,11 @@ class ElMundoSimpleScrapper(SimpleScrapper):
     def generateHemerotecaUrls(self, urlBase=None, dates=None, extraInfo=None):
         # https://www.elmundo.es/elmundo/hemeroteca/2019/01/01/m/economia.html
         urlsPerDay = {}
-        logging.info(" \t Url-Base: {}".format(urlBase))
+        self.logger.info(" \t Url-Base: {}".format(urlBase))
         for d in dates:
             partOfDayUrls = [urlBase.format(date=d, partOfDay=p) for p in extraInfo]
             urlsPerDay[d] = partOfDayUrls
-        logging.info(" \t -> urlsPerDay length: {}".format(len(urlsPerDay)))
+        self.logger.info(" \t -> urlsPerDay length: {}".format(len(urlsPerDay)))
         return urlsPerDay
 
     def filterUrls(self, links=[], urlBase="https://www.elmundo.es{}"):
@@ -68,7 +67,7 @@ class ElMundoSimpleScrapper(SimpleScrapper):
         return filteredLinks
 
     def extractComments(self, commentsList=None, urlNoticia=None, specialCase=None):
-        logging.info(" \t -> parsing comments list with -{}- elements:".format(len(commentsList)))
+        self.logger.info(" \t -> parsing comments list with -{}- elements:".format(len(commentsList)))
         parsedComments = []
         listToParse = commentsList[1] if specialCase and len(commentsList) > 1 else commentsList
         for commentObj in listToParse:
@@ -98,7 +97,7 @@ class ElMundoSimpleScrapper(SimpleScrapper):
                 title = el[0].text
                 break
         if title == url:
-            logging.warning(" \t -> title not found for url {}".format(url))
+            self.logger.warning(" \t -> title not found for url {}".format(url))
         return title
 
     def extractContent(self, renderedPage=None, url=None):
@@ -117,7 +116,7 @@ class ElMundoSimpleScrapper(SimpleScrapper):
                 contentStr = "".join([parrafo for parrafo in contentArr])
                 break
         if not contentStr:
-            logging.warning("\t -> url has not content found {}".format(url))
+            self.logger.warning("\t -> url has not content found {}".format(url))
 
         title = self.getTitle(renderedPage, url)
         content = {
@@ -151,48 +150,48 @@ class ElMundoSimpleScrapper(SimpleScrapper):
         if (len(totalComentarioElList) > 0):
             totalComentarioEl = totalComentarioElList[0]
             idNoticia = int(totalComentarioEl.get("data-commentid"))
-            logging.info(" \t idNoticia found: {}".format(idNoticia))
+            self.logger.info(" \t idNoticia found: {}".format(idNoticia))
             params = {"noticia": idNoticia, "version": "v2"}
             response = requests.get(self.urlGetComments, params)
             if response.status_code != 200:
-                logging.error(" \t something when wrong retrieving comments from idNoticia {}".format(idNoticia))
-                logging.info(" \t retrieving comments from idNoticia {} return status_code {}".format(idNoticia, response.status_code))
+                self.logger.error(" \t something when wrong retrieving comments from idNoticia {}".format(idNoticia))
+                self.logger.info(" \t retrieving comments from idNoticia {} return status_code {}".format(idNoticia, response.status_code))
                 time.sleep(5)
                 response = requests.get(self.urlGetComments, params)
             responseDecoded = {}
             try:
                 responseDecoded = json.loads(response.text)
             except JSONDecodeError as e:
-                logging.error(str(e))
+                self.logger.error(str(e))
 
-            logging.debug(responseDecoded)
+            self.logger.debug(responseDecoded)
             iterate = responseDecoded["lastPage"]
             pageComments = self.extractComments(responseDecoded['items'], url)
             if len(pageComments) == 0:
                 pageComments = self.extractCommentFromHtml(renderedPageHtml, url)
             total = pageComments[0]["order"]
-            logging.info(" -> retrieved total of comments: {}".format(total))
+            self.logger.info(" -> retrieved total of comments: {}".format(total))
             while not iterate:
-                logging.info(" - iterating...")
-                logging.info(" -> total of comments: {}".format(len(pageComments)))
+                self.logger.info(" - iterating...")
+                self.logger.info(" -> total of comments: {}".format(len(pageComments)))
                 nextComments = pageComments[len(pageComments)-1]["order"]
                 specialCase = False
                 if (nextComments == 1):
-                    logging.info(" -> special case, adding extra value in order to avoid wrong behaviour")
+                    self.logger.info(" -> special case, adding extra value in order to avoid wrong behaviour")
                     specialCase = True
                     nextComments = nextComments + 1
-                logging.info(" -> next pagina: {}".format(nextComments))
+                self.logger.info(" -> next pagina: {}".format(nextComments))
                 params = {"noticia": idNoticia, "version": "v2", "pagina": nextComments}
                 response = requests.get(self.urlGetComments, params)
                 responseDecoded = json.loads(response.text)
                 pageComments = pageComments + self.extractComments(responseDecoded['items'], url, specialCase)
                 iterate = responseDecoded["lastPage"]
-                logging.info(
+                self.logger.info(
                     "---------------------------------------------------------------------------------------------")
-            logging.info(" \t -> retrieved total of {} comments".format(len(pageComments)))
-            logging.info("#############################################################################################")
+            self.logger.info(" \t -> retrieved total of {} comments".format(len(pageComments)))
+            self.logger.info("#############################################################################################")
         else:
-            logging.warning(" \t -> there is something wrong due to commentsEl has not been found")
+            self.logger.warning(" \t -> there is something wrong due to commentsEl has not been found")
         return pageComments
 
     def generateHemerotecaExtraInfo(self):

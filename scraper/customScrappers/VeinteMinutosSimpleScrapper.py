@@ -10,11 +10,11 @@ from scraper.SimpleBasicScrapper import SimpleScrapper
 class VeinteMinutosSimpleScrapper(SimpleScrapper):
 
     def __init__(self):
-        self.logger = logging.getLogger("20minutos")
         super().__init__()
         self.urlInfoComments = "https://comments.eu1.gigya.com/comments.getStreamInfo"
         self.urlGetComments = "https://comments.eu1.gigya.com/comments.getComments"
         self._urlXpathQuery = "//ul[@class='normal-list']//a/@href"
+        self.logger = logging.getLogger(self.__class__.__name__)
 
     def initialize(self, begin="01/01/2019", end="01/01/2019", rootPath=None):
         self.start("https://www.20minutos.es/archivo/{date}/", "20minutos", begin, end, rootPath, "%Y/%m/%-d", [])
@@ -61,7 +61,7 @@ class VeinteMinutosSimpleScrapper(SimpleScrapper):
         return reformattedLinks
 
     def extractComments(self, commentsList=None, urlNoticia=None, specialCase=None):
-        logging.debug(" \t -> parsing comments list with -{}- elements:".format(len(commentsList)))
+        self.logger.debug(" \t -> parsing comments list with -{}- elements:".format(len(commentsList)))
         parsedComments = []
         listToParse = commentsList[1] if specialCase else commentsList
         for commentObj in listToParse:
@@ -87,7 +87,7 @@ class VeinteMinutosSimpleScrapper(SimpleScrapper):
         el = renderedPage.xpath(queryXpath)
         title = url
         if len(el) == 0:
-            logging.warning(" -> title not found in: {}".format(url))
+            self.logger.warning(" -> title not found in: {}".format(url))
         else:
             title = el[0].text
         return title
@@ -107,7 +107,7 @@ class VeinteMinutosSimpleScrapper(SimpleScrapper):
                 contentStr = "".join([parrafo for parrafo in contentArr])
                 break
         if not contentStr:
-            logging.warning("\t -> url has not content found {}".format(url))
+            self.logger.warning("\t -> url has not content found {}".format(url))
 
         title = self.getTitle(renderedPage, url)
         content = {
@@ -129,7 +129,7 @@ class VeinteMinutosSimpleScrapper(SimpleScrapper):
 
         if (streamIDStr != ""):
             commentElValStreamId = streamIDStr
-            logging.debug(" \t-> comment-stream-id to get comments is: {}".format(commentElValStreamId))
+            self.logger.debug(" \t-> comment-stream-id to get comments is: {}".format(commentElValStreamId))
 
             infoArg = {
                 "categoryID": "prod",
@@ -147,12 +147,12 @@ class VeinteMinutosSimpleScrapper(SimpleScrapper):
             }
             responseInfoComments = requests.get(self.urlInfoComments, infoArg)
             infoComments = json.loads(responseInfoComments.text)
-            logging.debug(" \t-> getting information for article: {}".format(url))
-            logging.debug(
+            self.logger.debug(" \t-> getting information for article: {}".format(url))
+            self.logger.debug(
                 " \t-> total of comments for current article: {}".format(infoComments["streamInfo"]["commentCount"]))
             if infoComments["streamInfo"]["commentCount"] > 0:
                 # La info dice que hay comentarios, se procede a obtenerlos
-                logging.debug(" -> total of comments is greater than 0")
+                self.logger.debug(" -> total of comments is greater than 0")
                 nextTs = ""
                 iterate = True
                 while (iterate):
@@ -184,7 +184,7 @@ class VeinteMinutosSimpleScrapper(SimpleScrapper):
                     iterate = commentsResponse["hasMore"]
                     nextTs = commentsResponse["next"]
                     pageComments = pageComments + self.extractComments(commentsResponse["comments"], url)
-                logging.debug(" \t -> retrieved total of {} comments".format(len(pageComments)))
-                logging.debug(
+                self.logger.debug(" \t -> retrieved total of {} comments".format(len(pageComments)))
+                self.logger.debug(
                     "#############################################################################################")
         return pageComments

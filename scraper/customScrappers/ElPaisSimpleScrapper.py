@@ -1,10 +1,9 @@
 import json
 import logging
-import sys
+import time
 from datetime import date, datetime
 from json import JSONDecodeError
 from random import random
-import time
 
 import requests
 
@@ -14,15 +13,13 @@ from scraper.SimpleBasicScrapper import SimpleScrapper
 class ElPaisSimpleScrapper(SimpleScrapper):
 
     def __init__(self):
-        self.logger = logging.getLogger("elpais")
         super().__init__()
         self.urlInfoComments = "https://elpais.com/ThreadeskupSimple"
         self.urlGetComments = "https://elpais.com/OuteskupSimple"
         self._urlXpathQuery = "//a/@href"
+        self.logger = logging.getLogger(self.__class__.__name__)
 
     def initialize(self, begin="01/01/2019", end="31/08/2019", rootPath=None):
-        logging.basicConfig(filename="{}-{}.log".format("elpais", datetime.today().strftime("%d%m%Y-%H%M%S")),
-                            level=logging.INFO)
         self.start("https://elpais.com/hemeroteca/elpais/{date}/{partOfDay}/portada.html", "elpais", begin, end,
                    rootPath, "%Y/%m/%d", ["m", "t", "n"])
 
@@ -46,11 +43,11 @@ class ElPaisSimpleScrapper(SimpleScrapper):
 
     def generateHemerotecaUrls(self, urlBase=None, dates=None, extraInfo=None):
         urlsPerDay = {}
-        logging.info(" \t Url-Base: {}".format(urlBase))
+        self.logger.info(" \t Url-Base: {}".format(urlBase))
         for d in dates:
             partOfDayUrls = [urlBase.format(date=d, partOfDay=p) for p in extraInfo]
             urlsPerDay[d] = partOfDayUrls
-        logging.info(" \t -> urlsPerDay length: {}".format(len(urlsPerDay)))
+        self.logger.info(" \t -> urlsPerDay length: {}".format(len(urlsPerDay)))
         return urlsPerDay
 
     def filterUrls(self, links=[], urlBase="https://www.elpais.com{}"):
@@ -105,16 +102,15 @@ class ElPaisSimpleScrapper(SimpleScrapper):
             elif "https://elpais.com" not in l:
                 reformattedLinks.append(urlBase.format(l))
             else:
-                logging.warning(" \t -> check the urls: {}".format(l))
-
+                self.logger.warning(" \t -> check the urls: {}".format(l))
 
         urlsToExtractInfo = list(dict.fromkeys([link for link in reformattedLinks
-                                   if not link in excludedUrls]))
+                                                if not link in excludedUrls]))
         self.logger.debug(" \t filtering urls. Total urls as output: {}".format(len(urlsToExtractInfo)))
         return urlsToExtractInfo
 
     def extractComments(self, commentsList=None, urlNoticia=None, specialCase=False):
-        logging.info(" \t -> parsing comments list with -{}- elements:".format(len(commentsList)))
+        self.logger.info(" \t -> parsing comments list with -{}- elements:".format(len(commentsList)))
         parsedComments = []
         listToParse = commentsList[1] if specialCase else commentsList
         for commentObj in listToParse:
@@ -140,7 +136,7 @@ class ElPaisSimpleScrapper(SimpleScrapper):
             commentElVal = commentEl.get("id").split("_")
             commentElValStreamId = commentElVal[len(commentElVal) - 1]
             perfiloHiloId = "_{}".format(commentElValStreamId)
-            logging.info(" \t-> comment-stream-id to get comments is: {}".format(commentElValStreamId))
+            self.logger.info(" \t-> comment-stream-id to get comments is: {}".format(commentElValStreamId))
             rnd = random()
             infoArg = {
                 "action": "info",
@@ -149,21 +145,21 @@ class ElPaisSimpleScrapper(SimpleScrapper):
             }
             responseInfoComments = requests.get(self.urlInfoComments, infoArg)
             infoComments = json.loads(responseInfoComments.text)
-            logging.info(" \t-> getting information for article: {}".format(url))
-            logging.info(" \t-> total of comments for current article: {}".format(
+            self.logger.info(" \t-> getting information for article: {}".format(url))
+            self.logger.info(" \t-> total of comments for current article: {}".format(
                 infoComments["perfilesHilos"][perfiloHiloId]["numero_mensajes"]))
             totalNumMensajes = 0
             try:
                 totalNumMensajes = int(infoComments["perfilesHilos"][perfiloHiloId]["numero_mensajes"])
             except Exception as e:
-                logging.error(" \t -> error trying to process numero_messages from response with message: {}".format(str(e)))
-                logging.error(" \t -> response:\n {}".format(json.dumps(infoComments)))
-                logging.error(" \t -> arguments used in request: \n {}".format(json.dumps(infoArg)))
-
+                self.logger.error(
+                    " \t -> error trying to process numero_messages from response with message: {}".format(str(e)))
+                self.logger.error(" \t -> response:\n {}".format(json.dumps(infoComments)))
+                self.logger.error(" \t -> arguments used in request: \n {}".format(json.dumps(infoArg)))
 
             if totalNumMensajes > 0:
                 # La info dice que hay comentarios, se procede a obtenerlos
-                logging.info(" -> total of comments is greater than 0")
+                self.logger.info(" -> total of comments is greater than 0")
                 rnd = random()
                 commentsArgs = {
                     "s": "",
@@ -180,28 +176,29 @@ class ElPaisSimpleScrapper(SimpleScrapper):
                     commentsResponse = json.loads(jsonStr)
                     pageComments = self.extractComments(commentsResponse["mensajes"], url)
                 except JSONDecodeError as e:
-                    logging.error(" \t -> there was an error trying to process getComment response")
-                    logging.error(" \t -> url with status code: {}".format(responseComments.status_code))
-                    logging.error(" \t -> url with response text len: {}".format(responseComments.text))
-                    logging.error(" \t -> the error was: {}".format(str(e)))
-                    logging.error(" \t -> retrying to parse json")
+                    self.logger.error(" \t -> there was an error trying to process getComment response")
+                    self.logger.error(" \t -> url with status code: {}".format(responseComments.status_code))
+                    self.logger.error(" \t -> url with response text len: {}".format(responseComments.text))
+                    self.logger.error(" \t -> the error was: {}".format(str(e)))
+                    self.logger.error(" \t -> retrying to parse json")
                     try:
                         commentsResponse = json.loads(jsonStr.replace(jsonStr[e.pos], ""))
                         pageComments = self.extractComments(commentsResponse["mensajes"], url)
                     except JSONDecodeError as er:
-                        logging.error(" \t -> redecoding has failed, omitting this comments")
-                        logging.error(" \t -> the error was: {}".format(str(er)))
+                        self.logger.error(" \t -> redecoding has failed, omitting this comments")
+                        self.logger.error(" \t -> the error was: {}".format(str(er)))
                 except Exception as e2:
-                    logging.error(" \t -> there was an error trying to process getComment response but parsing json has not failed")
-                    logging.error(str(e2))
+                    self.logger.error(
+                        " \t -> there was an error trying to process getComment response but parsing json has not failed")
+                    self.logger.error(str(e2))
 
-                logging.info(" \t -> retrieved total of {} comments".format(len(pageComments)))
-                logging.info(
+                self.logger.info(" \t -> retrieved total of {} comments".format(len(pageComments)))
+                self.logger.info(
                     "#############################################################################################")
             else:
-                logging.warning(" \t no comments retrieved from api for url: {}".format(url))
+                self.logger.warning(" \t no comments retrieved from api for url: {}".format(url))
         else:
-            logging.warning(" \t comments htmlEl has not been found in url: {}".format(url))
+            self.logger.warning(" \t comments htmlEl has not been found in url: {}".format(url))
         return pageComments
 
     def getTitle(self, renderedPage=None, url=None):
@@ -234,7 +231,7 @@ class ElPaisSimpleScrapper(SimpleScrapper):
                 contentStr = "".join([parrafo for parrafo in contentArr])
                 break
         if not contentStr:
-            logging.warning("\t -> url has not content found {}".format(url))
+            self.logger.warning("\t -> url has not content found {}".format(url))
         title = self.getTitle(renderedPage, url)
         content = {
             "url": url,
