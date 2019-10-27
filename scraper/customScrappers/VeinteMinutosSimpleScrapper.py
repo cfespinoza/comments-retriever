@@ -13,7 +13,7 @@ class VeinteMinutosSimpleScrapper(SimpleScrapper):
         super().__init__()
         self.urlInfoComments = "https://comments.eu1.gigya.com/comments.getStreamInfo"
         self.urlGetComments = "https://comments.eu1.gigya.com/comments.getComments"
-        self._urlXpathQuery = "//ul[@class='normal-list']//a/@href"
+        self._urlXpathQuery = "//section[@class='container']//a/@href"
         self.logger = logging.getLogger(self.__class__.__name__)
 
     def initialize(self, begin="01/01/2019", end="01/01/2019", rootPath=None):
@@ -83,7 +83,7 @@ class VeinteMinutosSimpleScrapper(SimpleScrapper):
         return parsedComments
 
     def getTitle(self, renderedPage=None, url=None):
-        queryXpath = "//div[@id='main']//h1[@class='article-title']"
+        queryXpath = "//div[@class='title']/h1"
         el = renderedPage.xpath(queryXpath)
         title = url
         if len(el) == 0:
@@ -93,9 +93,9 @@ class VeinteMinutosSimpleScrapper(SimpleScrapper):
         return title
 
     def extractContent(self, renderedPage=None, url=None):
-        queries_xpath = ["//div[@class='gtm-article-text']//p",
-                         "//div[@class='gtm-article-text']//span",
-                         "//div[@class='gtm-article-text']/div[@class='gmail_default']"]
+        queries_xpath = ["//div[@class='article-text']//p",
+                         "//div[@class='article-text']//span",
+                         "//div[@class='article-text']/div[@class='gmail_default']"]
 
         contentStr = ""
         for q in queries_xpath:
