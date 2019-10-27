@@ -6,13 +6,6 @@ import os
 import sys
 from datetime import datetime
 
-# {
-#     "media": "",
-#     "begin": "",
-#     "end": "",
-#     "resultsPath": ""
-#     "news_file": ""
-# }
 from scraper.customScrappers.ABCSimpleScrapper import ABCSimpleScrapper
 from scraper.customScrappers.ElMundoSimpleScrapper import ElMundoSimpleScrapper
 from scraper.customScrappers.ElPaisSimpleScrapper import ElPaisSimpleScrapper
