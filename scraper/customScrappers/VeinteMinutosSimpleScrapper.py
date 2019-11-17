@@ -14,6 +14,10 @@ class VeinteMinutosSimpleScrapper(SimpleScrapper):
         self.urlInfoComments = "https://comments.eu1.gigya.com/comments.getStreamInfo"
         self.urlGetComments = "https://comments.eu1.gigya.com/comments.getComments"
         self._urlXpathQuery = "//section[@class='container']//a/@href"
+        self.data_layer_key = "dataLayer"
+        self.categoria_key = "categoria"
+        self.subcategoria_key = "subcategoria"
+
         self.logger = logging.getLogger(self.__class__.__name__)
 
     def initialize(self, begin="01/01/2019", end="01/01/2019", rootPath=None):
@@ -92,8 +96,31 @@ class VeinteMinutosSimpleScrapper(SimpleScrapper):
             title = el[0].text
         return title
 
+    def getDataLayer(self, rendered_html=None):
+        scriptText = ""
+        for element in rendered_html.iter('script'):
+            scriptText = element.text_content()
+            if self.data_layer_key in scriptText:
+                self.logger.debug(" data_layer_key has been found")
+                break
+        if not scriptText:
+            return {}
+
+        data_layer_json_str = scriptText.split('dataLayer = [')[-1].rsplit('];', 1)[0].strip()
+        try:
+            data_layer = json.loads(data_layer_json_str)
+            return data_layer
+        except Exception as e:
+            self.logger.error(" parsing json has failed.")
+            self.logger.error("-------------------------------")
+            self.logger.error(data_layer_json_str)
+            self.logger.error("-------------------------------")
+            self.logger.error(str(e))
+            return {}
+
     def extractContent(self, renderedPage=None, url=None):
-        queries_xpath = ["//div[@class='article-text']//p",
+        queries_xpath = ["//div[@class='article-text']",
+                         "//div[@class='article-text']//p",
                          "//div[@class='article-text']//span",
                          "//div[@class='article-text']/div[@class='gmail_default']"]
 
@@ -110,10 +137,15 @@ class VeinteMinutosSimpleScrapper(SimpleScrapper):
             self.logger.warning("\t -> url has not content found {}".format(url))
 
         title = self.getTitle(renderedPage, url)
+        dataLayer = self.getDataLayer(renderedPage)
+        category = dataLayer.get(self.categoria_key, "")
+        subcategory = dataLayer.get(self.subcategoria_key, "")
         content = {
             "url": url,
             "content": contentStr,
-            "title": title
+            "title": title,
+            "category": category,
+            "subcategory": subcategory
         }
         return [content]
 
