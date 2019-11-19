@@ -44,11 +44,11 @@ class ElMundoSimpleScrapper(SimpleScrapper):
     def generateHemerotecaUrls(self, urlBase=None, dates=None, extraInfo=None):
         # https://www.elmundo.es/elmundo/hemeroteca/2019/01/01/m/economia.html
         urlsPerDay = {}
-        self.logger.info(" \t Url-Base: {}".format(urlBase))
+        self.logger.info("Url-Base: {}".format(urlBase))
         for d in dates:
             partOfDayUrls = [urlBase.format(date=d, partOfDay=p) for p in extraInfo]
             urlsPerDay[d] = partOfDayUrls
-        self.logger.info(" \t -> urlsPerDay length: {}".format(len(urlsPerDay)))
+        self.logger.info("urlsPerDay length: {}".format(len(urlsPerDay)))
         return urlsPerDay
 
     def filterUrls(self, links=[], urlBase="https://www.elmundo.es{}"):
@@ -67,7 +67,7 @@ class ElMundoSimpleScrapper(SimpleScrapper):
         return filteredLinks
 
     def extractComments(self, commentsList=None, urlNoticia=None, specialCase=None):
-        self.logger.info(" \t -> parsing comments list with -{}- elements:".format(len(commentsList)))
+        self.logger.info("parsing comments list with -{}- elements:".format(len(commentsList)))
         parsedComments = []
         listToParse = commentsList[1] if specialCase and len(commentsList) > 1 else commentsList
         for commentObj in listToParse:
@@ -97,7 +97,7 @@ class ElMundoSimpleScrapper(SimpleScrapper):
                 title = el[0].text
                 break
         if title == url:
-            self.logger.warning(" \t -> title not found for url {}".format(url))
+            self.logger.warning("title not found for url {}".format(url))
         return title
 
     def extractContent(self, renderedPage=None, url=None):
@@ -116,7 +116,7 @@ class ElMundoSimpleScrapper(SimpleScrapper):
                 contentStr = "".join([parrafo for parrafo in contentArr])
                 break
         if not contentStr:
-            self.logger.warning("\t -> url has not content found {}".format(url))
+            self.logger.warning("url has not content found {}".format(url))
 
         title = self.getTitle(renderedPage, url)
         content = {
@@ -150,12 +150,12 @@ class ElMundoSimpleScrapper(SimpleScrapper):
         if (len(totalComentarioElList) > 0):
             totalComentarioEl = totalComentarioElList[0]
             idNoticia = int(totalComentarioEl.get("data-commentid"))
-            self.logger.info(" \t idNoticia found: {}".format(idNoticia))
+            self.logger.info("idNoticia found: {}".format(idNoticia))
             params = {"noticia": idNoticia, "version": "v2"}
             response = requests.get(self.urlGetComments, params)
             if response.status_code != 200:
-                self.logger.error(" \t something when wrong retrieving comments from idNoticia {}".format(idNoticia))
-                self.logger.info(" \t retrieving comments from idNoticia {} return status_code {}".format(idNoticia, response.status_code))
+                self.logger.error("something when wrong retrieving comments from idNoticia {}".format(idNoticia))
+                self.logger.info("retrieving comments from idNoticia {} return status_code {}".format(idNoticia, response.status_code))
                 time.sleep(5)
                 response = requests.get(self.urlGetComments, params)
             responseDecoded = {}
@@ -170,17 +170,17 @@ class ElMundoSimpleScrapper(SimpleScrapper):
             if len(pageComments) == 0:
                 pageComments = self.extractCommentFromHtml(renderedPageHtml, url)
             total = pageComments[0]["order"]
-            self.logger.info(" -> retrieved total of comments: {}".format(total))
+            self.logger.info("retrieved total of comments: {}".format(total))
             while not iterate:
-                self.logger.info(" - iterating...")
-                self.logger.info(" -> total of comments: {}".format(len(pageComments)))
+                self.logger.info("- iterating...")
+                self.logger.info("total of comments: {}".format(len(pageComments)))
                 nextComments = pageComments[len(pageComments)-1]["order"]
                 specialCase = False
                 if (nextComments == 1):
-                    self.logger.info(" -> special case, adding extra value in order to avoid wrong behaviour")
+                    self.logger.info("special case, adding extra value in order to avoid wrong behaviour")
                     specialCase = True
                     nextComments = nextComments + 1
-                self.logger.info(" -> next pagina: {}".format(nextComments))
+                self.logger.info("next pagina: {}".format(nextComments))
                 params = {"noticia": idNoticia, "version": "v2", "pagina": nextComments}
                 response = requests.get(self.urlGetComments, params)
                 responseDecoded = json.loads(response.text)
@@ -188,10 +188,10 @@ class ElMundoSimpleScrapper(SimpleScrapper):
                 iterate = responseDecoded["lastPage"]
                 self.logger.info(
                     "---------------------------------------------------------------------------------------------")
-            self.logger.info(" \t -> retrieved total of {} comments".format(len(pageComments)))
+            self.logger.info("retrieved total of {} comments".format(len(pageComments)))
             self.logger.info("#############################################################################################")
         else:
-            self.logger.warning(" \t -> there is something wrong due to commentsEl has not been found")
+            self.logger.warning("there is something wrong due to commentsEl has not been found")
         return pageComments
 
     def generateHemerotecaExtraInfo(self):

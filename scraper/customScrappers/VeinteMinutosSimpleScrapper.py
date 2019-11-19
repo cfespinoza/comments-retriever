@@ -43,13 +43,13 @@ class VeinteMinutosSimpleScrapper(SimpleScrapper):
 
     def generateHemerotecaUrls(self, urlBase=None, dates=None, extraInfo=None):
         urlsPerDay = {}
-        print(" \t Url-Base: {}".format(urlBase))
+        print("Url-Base: {}".format(urlBase))
         for d in dates:
             urlsPerDay[d] = [urlBase.format(date=d)]
         return urlsPerDay
 
     def filterUrls(self, links=[], urlBase="https://www.20minutos.es{}"):
-        self.logger.debug(" \t filtering urls. Total urls as input: {}".format(len(links)))
+        self.logger.debug("filtering urls. Total urls as input: {}".format(len(links)))
         filteredLinks = list(dict.fromkeys([link for link in links
                                             if not "#social" in link
                                             and not link.startswith("#")]))
@@ -61,11 +61,11 @@ class VeinteMinutosSimpleScrapper(SimpleScrapper):
                 reformattedLinks.append("https:{}".format(l))
             else:
                 reformattedLinks.append(urlBase.format(l))
-        self.logger.debug(" \t filtering urls. Total urls as output: {}".format(len(reformattedLinks)))
+        self.logger.debug("filtering urls. Total urls as output: {}".format(len(reformattedLinks)))
         return reformattedLinks
 
     def extractComments(self, commentsList=None, urlNoticia=None, specialCase=None):
-        self.logger.debug(" \t -> parsing comments list with -{}- elements:".format(len(commentsList)))
+        self.logger.debug("parsing comments list with -{}- elements:".format(len(commentsList)))
         parsedComments = []
         listToParse = commentsList[1] if specialCase else commentsList
         for commentObj in listToParse:
@@ -91,7 +91,7 @@ class VeinteMinutosSimpleScrapper(SimpleScrapper):
         el = renderedPage.xpath(queryXpath)
         title = url
         if len(el) == 0:
-            self.logger.warning(" -> title not found in: {}".format(url))
+            self.logger.warning("title not found in: {}".format(url))
         else:
             title = el[0].text
         return title
@@ -134,7 +134,7 @@ class VeinteMinutosSimpleScrapper(SimpleScrapper):
                 contentStr = "".join([parrafo for parrafo in contentArr])
                 break
         if not contentStr:
-            self.logger.warning("\t -> url has not content found {}".format(url))
+            self.logger.warning("url has not content found {}".format(url))
 
         title = self.getTitle(renderedPage, url)
         dataLayer = self.getDataLayer(renderedPage)
@@ -161,7 +161,7 @@ class VeinteMinutosSimpleScrapper(SimpleScrapper):
 
         if (streamIDStr != ""):
             commentElValStreamId = streamIDStr
-            self.logger.debug(" \t-> comment-stream-id to get comments is: {}".format(commentElValStreamId))
+            self.logger.debug("comment-stream-id to get comments is: {}".format(commentElValStreamId))
 
             infoArg = {
                 "categoryID": "prod",
@@ -179,12 +179,12 @@ class VeinteMinutosSimpleScrapper(SimpleScrapper):
             }
             responseInfoComments = requests.get(self.urlInfoComments, infoArg)
             infoComments = json.loads(responseInfoComments.text)
-            self.logger.debug(" \t-> getting information for article: {}".format(url))
+            self.logger.debug("getting information for article: {}".format(url))
             self.logger.debug(
-                " \t-> total of comments for current article: {}".format(infoComments["streamInfo"]["commentCount"]))
+                "total of comments for current article: {}".format(infoComments["streamInfo"]["commentCount"]))
             if infoComments["streamInfo"]["commentCount"] > 0:
                 # La info dice que hay comentarios, se procede a obtenerlos
-                self.logger.debug(" -> total of comments is greater than 0")
+                self.logger.debug("total of comments is greater than 0")
                 nextTs = ""
                 iterate = True
                 while (iterate):
@@ -216,7 +216,7 @@ class VeinteMinutosSimpleScrapper(SimpleScrapper):
                     iterate = commentsResponse["hasMore"]
                     nextTs = commentsResponse["next"]
                     pageComments = pageComments + self.extractComments(commentsResponse["comments"], url)
-                self.logger.debug(" \t -> retrieved total of {} comments".format(len(pageComments)))
+                self.logger.debug("retrieved total of {} comments".format(len(pageComments)))
                 self.logger.debug(
                     "#############################################################################################")
         return pageComments

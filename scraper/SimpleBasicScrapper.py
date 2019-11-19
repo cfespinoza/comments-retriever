@@ -87,7 +87,7 @@ class SimpleScrapper():
         elif self._currentStage == self._GET_COMMENTS_STATE:
             try:
                 # => iterate in urls per day, but in this case it is extracting url news
-                self.logger.info(" \t retrieving comments from day: {}".format(self._currentDateKey))
+                self.logger.info("retrieving comments from day: {}".format(self._currentDateKey))
                 self._currentUrl = next(self._urlsPerDayIt)
             except StopIteration:
                 try:
@@ -119,8 +119,8 @@ class SimpleScrapper():
             else:
                 return True
         elif self._currentStage == self._COMMENTS_RETRIEVED_STATE:
-            self.logger.info("\t -> state detected: {}".format(self._currentStage))
-            self.logger.info(" \t nothing to process due to it seems comments and contents files have been downloaded "
+            self.logger.info("state detected: {}".format(self._currentStage))
+            self.logger.info("nothing to process due to it seems comments and contents files have been downloaded "
                          "previously for period: {}".format(self._period))
             return False
         else:
@@ -145,7 +145,7 @@ class SimpleScrapper():
 
     def loadNewsPerDayFile(self):
         filename = self.getFilename(self._period, self._NEWS_LINKS_PER_DAY, "json")
-        self.logger.info(" \t -> trying to load newsPerDayFile from path {}".format(filename))
+        self.logger.info("trying to load newsPerDayFile from path {}".format(filename))
         with open(filename, 'r') as f:
             self._newsUrlsPerDayObj = json.load(f)
             self._datesArr = list(self._newsUrlsPerDayObj.keys())
@@ -155,14 +155,14 @@ class SimpleScrapper():
             contents_file = self.getFilename(self._currentDateKey, "contents", "json")
             still_search = True
             while os.path.isfile(comments_file) and os.path.isfile(contents_file) and still_search:
-                self.logger.info(" \t -> comments file found: {}".format(comments_file))
-                self.logger.info(" \t -> contents file found: {}".format(contents_file))
+                self.logger.info("comments file found: {}".format(comments_file))
+                self.logger.info("contents file found: {}".format(contents_file))
                 try:
                     self._currentDateKey = next(self._datesIt)
                     comments_file = self.getFilename(self._currentDateKey, "comments", "json")
                     contents_file = self.getFilename(self._currentDateKey, "contents", "json")
                 except StopIteration:
-                    self.logger.warning(" \t -> files found for whole period. ")
+                    self.logger.warning("files found for whole period. ")
                     self._currentStage = self._COMMENTS_RETRIEVED_STATE
                     self._currentDateKey = None
                     still_search = False
@@ -170,29 +170,29 @@ class SimpleScrapper():
                 dict.fromkeys(self._newsUrlsPerDayObj.get(self._currentDateKey,
                                                           [])))) if self._currentDateKey else [] if self._currentDateKey else []
             self._currentStage =  self._GET_COMMENTS_STATE if self._currentDateKey else self._COMMENTS_RETRIEVED_STATE
-        self.logger.info(" \t -> newsPerDayFile has been loaded from path {}".format(filename))
+        self.logger.info("newsPerDayFile has been loaded from path {}".format(filename))
 
     def processCurrentPage(self):
         while self.fetchNext():
-            self.logger.info(" -> trying to render url: {}".format(self._currentUrl))
+            self.logger.info("trying to render url: {}".format(self._currentUrl))
             html = None
             try:
                 html = requests.get(self._currentUrl)
             except Exception as e:
                 self.logger.error(str(e))
-                self.logger.error(" \t -> there was an error while making request to {}".format(self._currentUrl))
-                self.logger.error(" \t -> Url -{}- will not be processed".format(self._currentUrl))
+                self.logger.error("there was an error while making request to {}".format(self._currentUrl))
+                self.logger.error("Url -{}- will not be processed".format(self._currentUrl))
 
             if html != None and html.text != "":
                 renderedPage = htmlRenderer.fromstring(html.text)
 
                 if (self._currentStage == self._GET_URLS_STATE):
                     # in this stage the program is trying to extract urls for news
-                    self.logger.debug(" -> processing base URL: {}".format(self._currentUrl))
+                    self.logger.debug("processing base URL: {}".format(self._currentUrl))
                     auxLinks = renderedPage.xpath(self._urlXpathQuery)
                     # filter urls
                     finalLinks = self.filterUrls(links=auxLinks)
-                    self.logger.debug(" -> TOtal of url retrieved to extract comments: {}".format(len(finalLinks)))
+                    self.logger.debug("TOtal of url retrieved to extract comments: {}".format(len(finalLinks)))
                     self.logger.debug(
                         "==================================================================================================")
                     self._newsUrlsPerDayObj[self._currentDateKey] = self._newsUrlsPerDayObj[
@@ -200,22 +200,22 @@ class SimpleScrapper():
 
                 elif (self._currentStage == self._GET_COMMENTS_STATE):
                     self.logger.debug(
-                        " -> url will be processed to extract content and comments: {}".format(self._currentUrl))
-                    self.logger.debug(" -> url to extract comments: {}".format(self._currentUrl))
+                        "url will be processed to extract content and comments: {}".format(self._currentUrl))
+                    self.logger.debug("url to extract comments: {}".format(self._currentUrl))
                     commentsFound = self.lookupForComments(renderedPage, self._currentUrl)
                     if len(commentsFound) > 0:
                         self._commentsPerDay = self._commentsPerDay + commentsFound
-                        self.logger.debug(" -> url to extract content: {}".format(self._currentUrl))
+                        self.logger.debug("url to extract content: {}".format(self._currentUrl))
                         self._contentPerDay = self._contentPerDay + self.extractContent(renderedPage, self._currentUrl)
-                    self.logger.debug(" -> url has been processed: {}".format(self._currentUrl))
+                    self.logger.debug("url has been processed: {}".format(self._currentUrl))
 
                 else:
                     self.logger.error(
-                        " -> Something went wrong due to state {} is not recognized... application will be shutted down.".format(
+                        "Something went wrong due to state {} is not recognized... application will be shutted down.".format(
                             self._currentStage))
                     sys.exit(-1)
             else:
-                self.logger.warning(" -> Something is wrong. Empty html retrieved from url {}".format(self._currentUrl))
+                self.logger.warning("Something is wrong. Empty html retrieved from url {}".format(self._currentUrl))
 
     ####################################################################
     #################### helper functions
@@ -243,7 +243,7 @@ class SimpleScrapper():
 
     def exportData(self, data=None, dayData=None, typeData=None, format=None):
         fileName = self.getFilename(dayData, typeData, format)
-        self.logger.info(" \t data will be exported in {}".format(format))
+        self.logger.info("data will be exported in {}".format(format))
         if format == "csv":
             with open(fileName, "w") as file:
                 csvwriter = csv.writer(file)
@@ -258,8 +258,8 @@ class SimpleScrapper():
             with open(fileName, "w") as file:
                 json.dump(data, file)
         else:
-            self.logger.error(" \t {} format not supported".format(format))
-        self.logger.debug(" \t -> exported data fileName: {}".format(fileName))
+            self.logger.error("{} format not supported".format(format))
+        self.logger.debug("exported data fileName: {}".format(fileName))
 
     def getDateFormat(self):
         return self._dateFormat

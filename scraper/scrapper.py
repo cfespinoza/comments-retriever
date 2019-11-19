@@ -17,19 +17,21 @@ SUPPORTED_MEDIA = ["abc", "elmundo", "elpais", "20minutos", "lavanguardia"]
 
 
 def _create_results_media_path(results_path, media, LOGGER):
-    media_results_path = os.path.join(results_path, media)
+    today = datetime.now().strftime("%d-%m-%Y")
+    result_root_path = os.path.join(results_path, today)
+    media_results_path = os.path.join(result_root_path, media)
     if os.path.isdir(media_results_path):
         LOGGER.info(" {} results media path exists".format(media_results_path))
     else:
         try:
-            os.mkdir(media_results_path)
+            os.makedirs(media_results_path)
         except FileExistsError:
             LOGGER.info(" {} results media path exists".format(media_results_path))
         except Exception as e:
             LOGGER.error(" something went wrong trying to create results path for media: {}".format(media))
             LOGGER.error(str(e))
             sys.exit(-1)
-    return media_results_path
+    return result_root_path
 
 
 def get_config_obj(config_file=None, begin=None, end=None, media=None, results_path=None, LOGGER=None):
@@ -51,7 +53,7 @@ def get_config_obj(config_file=None, begin=None, end=None, media=None, results_p
                 "media": media,
                 "begin": begin,
                 "end": end,
-                "resultsPath": results_path
+                "resultsPath": media_results
             }
         else:
             LOGGER.error(" something is wrong with argumnets, it  has been detected that some of them are invalid")
@@ -138,6 +140,7 @@ def execute(config_obj=None, LOGGER=None):
             print(" Final contents file generated: - {} -".format(contents_file))
             LOGGER.info(" Final comments file generated: - {} -".format(comments_file))
             LOGGER.info(" Final contents file generated: - {} -".format(contents_file))
+            LOGGER.info("scrapping process has finished sucessfully")
         except Exception as e:
             LOGGER.error("Execution has failed...")
             e.with_traceback()
@@ -157,7 +160,8 @@ def _main(argv):
 def get_logger(config):
     begin_prefix = config["begin"].replace("/", "")
     end_prefix = config["end"].replace("/", "")
-    log_file_name = "{media}-{init}-{end}.log".format(media=config["media"], init=begin_prefix, end=end_prefix)
+    today = datetime.now().strftime("%d%m%Y")
+    log_file_name = "{today}-{media}-{init}-{end}.log".format(today=today, media=config["media"], init=begin_prefix, end=end_prefix)
     log_file = os.path.join(config["results_path"], log_file_name)
     print("\t -> log file: {}".format(log_file))
     logging.basicConfig(filename=log_file,
