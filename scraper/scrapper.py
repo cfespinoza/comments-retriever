@@ -1,3 +1,8 @@
+"""
+Módulo principal encargado de recibir los parámetros de entrada y asegurarse de la creación de las carpetas donde almacenar
+los resultados y de lanzar el proceso de scrapping acorde al medio que se solicita.
+"""
+
 import argparse
 import getopt
 import json
@@ -17,6 +22,15 @@ SUPPORTED_MEDIA = ["abc", "elmundo", "elpais", "20minutos", "lavanguardia"]
 
 
 def _create_results_media_path(results_path, media, LOGGER):
+    """
+    Función privada que crea las carpetas necesaria para almacenar los resultados
+
+    :param results_path: directorio raíz desde donde colgarán los resultados
+    :param media: media para el que se va a hacer el proceso de scrapping
+    :param LOGGER: objeto logger para almacenar los logs
+    :return: devuelve el direcotrio raíz que se haya pasado por argumento al programa concatenando el día en el que se
+            está ejecutando
+    """
     today = datetime.now().strftime("%d-%m-%Y")
     result_root_path = os.path.join(results_path, today)
     media_results_path = os.path.join(result_root_path, media)
@@ -35,6 +49,15 @@ def _create_results_media_path(results_path, media, LOGGER):
 
 
 def get_config_obj(config_file=None, begin=None, end=None, media=None, results_path=None, LOGGER=None):
+    """Función auxiliar que genera configuración interna para el correcto funcionamiento del programa
+    :param config_file: ruta al fichero de configuración si existiese
+    :param begin: inicio del período de scrapping
+    :param end: fin del período de scrapping
+    :param media: medio del cual se va a hacer el scrapping
+    :param results_path: ruta raíz donde se van a almacenar los resultados
+    :param LOGGER: objeto logger
+    :return: json de configuración
+    """
     config_obj = None
     LOGGER.info("config_file found: {}".format(config_file))
     LOGGER.info("begin found: {}".format(begin))
@@ -63,6 +86,11 @@ def get_config_obj(config_file=None, begin=None, end=None, media=None, results_p
 
 
 def get_opts(argv):
+    """
+    Obtiene la configuración de los argumentos recibidos por consola cuando se ejecuta el proceso
+    :param argv: argv de la ejecución del programa por consola
+    :return: objecto de configuración
+    """
     config_file = None
     begin = None
     end = None
@@ -99,6 +127,12 @@ def get_opts(argv):
 
 
 def isValidDate(dateStr, LOGGER):
+    """
+    Función auxiliar que valida el correcto formato de las fechas que se pasan al programa por consola al ejecutarlo
+    :param dateStr: string de fecha
+    :param LOGGER: objeto logger
+    :return:
+    """
     isValid = False
     try:
         d = datetime.strptime(dateStr, "%d/%m/%Y")
@@ -114,6 +148,12 @@ def isValidDate(dateStr, LOGGER):
 
 
 def execute(config_obj=None, LOGGER=None):
+    """
+    Función que inicia el proceso de scrapping
+    :param config_obj: objeto de configuración extraído de los argumentos
+    :param LOGGER: objeto logger
+    :return:
+    """
     scrapper = None
     if config_obj:
         media = config_obj["media"]
@@ -158,6 +198,11 @@ def _main(argv):
 
 
 def get_logger(config):
+    """
+    Función que crea el objeto Logger y lo devuelve
+    :param config: json de configuración obtenido de los argumentos pasados en la ejecución del programa
+    :return:
+    """
     begin_prefix = config["begin"].replace("/", "")
     end_prefix = config["end"].replace("/", "")
     today = datetime.now().strftime("%d%m%Y")
@@ -173,6 +218,11 @@ def get_logger(config):
 
 
 def main():
+    """
+    Función main auxiliar. En desuso
+    :param argv:
+    :return:
+    """
     parser = argparse.ArgumentParser(
         prog='Scrapper',
         usage='scrapper -b 01/01/2019 -e 31/01/2019 -m [elmundo|elpais|abc|20minutos|lavanguardia] -r <results_path>'

@@ -1,3 +1,8 @@
+"""
+Este módulo se encarga de unificar los ficheros de comentarios y contenido que se han obtenido por cada día del período
+de extracción y termina generando un csv de comentarios y contenido.
+"""
+
 import csv
 import json
 import os
@@ -12,6 +17,10 @@ DATE_FORMATS = {
 
 
 def export(fileName, data):
+    """Escribe el csv en disco dejándolo en el directorio de resultados
+    :param fileName: nombre del fichero que se generará
+    :param data: datos a escribir en el fichero
+    """
     with open(fileName, "w") as file:
         csvwriter = csv.writer(file)
         count = 0
@@ -24,6 +33,10 @@ def export(fileName, data):
 
 
 def loadJsons(files):
+    """Lee el contenido de todos los json generados por cada día
+    :param files: array de ficheros a leer para luego unificar su contenido en un único csv
+    :return: array con los json leídos de los ficheros
+    """
     all = []
     for f in files:
         if os.path.isfile(f):
@@ -35,6 +48,14 @@ def loadJsons(files):
 
 
 def unify(begin, end, media, resultPath, scrapper):
+    """Función de alto nivel que se encarga de lanzar el proceso de unificación de los ficheros
+    :param begin: inicio del período de scrapping
+    :param end: fin del período de scrapping
+    :param media: medio del cual se hace el scrapping
+    :param resultPath: resultados donde se van a almacenar los resultados finales
+    :param scrapper: instancia del scrapper del medio que se usará para obtener el listado de fechas
+    :return:
+    """
     date_format = DATE_FORMATS[media]
     dates = scrapper.generateDates(start=begin, end=end, dateFormat=date_format)
     period = "{}-{}".format(begin.replace("/", ""), end.replace("/", ""))

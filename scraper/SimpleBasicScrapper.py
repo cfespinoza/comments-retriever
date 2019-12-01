@@ -1,3 +1,25 @@
+"""
+Clase principal que define la interfaz de los scrappers. Es la clase padre de la que hereadan cada scrapper hijo
+(por medio de comunicación).
+Esta clase también se encarga de lleva la lógica del proceso de extracción de comentarios. Este proceso pasa por 3 estados
+
+"getUrls" -> estado inicial desde el que se inicia el proceso de scrapping. Este estado se encargará de obtener las urls
+de las noticias de las que se van a extraer los comentarios. Para esto recorrerrá las webs de hemeroteca o archivos del medio
+para extraer las noticas por día entre el período que se haya definido como argumento al ejecutar el programa. Como resultado
+de este estado se vuelcan estos url obtenidos en dos json:
+    <ruta_de_resultados>/webpages-per-day.json  -> urls de archivo o hemeroteca para extraer las urls noticias por día
+    <ruta_de_resultados>/news-links-per-day     -> urls de noticias por día.
+
+"getComments"   -> estado siguiente al de "getUrls" y al que se llega una vez se hayan extraído las urls para todos los
+días. En este estado se recorre el json de las urls de noticias por día y se empieza el proceso de extracción de
+comentario por cada medio. Al acabar la extracción de comentarios por día se almacenan dos json por día.
+     <ruta_de_resultados>/<formato_de_fecha_del_medio>-comments.json
+     <ruta_de_resultados>/<formato_de_fecha_del_medio>-content.json
+
+"commentsRetrieved"     -> en este estado se han terminado de extraer los comentarios y se procede a la exportación y
+generación de los csv finales
+"""
+
 import csv
 import json
 import logging
@@ -12,6 +34,10 @@ from lxml import html as htmlRenderer
 class SimpleScrapper():
 
     def __init__(self):
+        """Constructor por defectos
+        Función que encargada de inicializar parámetros comunes a todos los scrappers que extiendan la clase.
+        No espera argumentos.
+        """
         super(SimpleScrapper, self).__init__()
         self._commentsPerDay = []
         self._contentPerDay = []
@@ -41,6 +67,20 @@ class SimpleScrapper():
 
     def start(self, historicalRootUrl,
               media, initPeriod, endPeriod, rootPath, dateFormatStr, hemerotecaExtraInfo=[]):
+        """Ejecuta el inicio del proceso de scrapping
+        Sus argumentos tienen que ser establecidos desde la clase que la extienda ya que son parámetros que dependen
+        del medio que se va a procesar.
+
+        :param historicalRootUrl: url desde donde se extraerán las url por cada día
+        :param media: nombre del medio que se va a hacer scrapping
+        :param initPeriod:  inicio del período
+        :param endPeriod: fin del período
+        :param rootPath: ruta del directorio donde se va a almacenar los resultados
+        :param dateFormatStr: fomato de fecha que se aplica para el medio
+        :param hemerotecaExtraInfo: información extra que se necesite para obtener las url de hemroteca desde donde se
+            se extraen las noticias por día
+
+        """
         self._historicalRootUrl = historicalRootUrl
         self._media = media
         self._initPeriod = initPeriod
@@ -53,6 +93,11 @@ class SimpleScrapper():
         self.processCurrentPage()
 
     def fetchNext(self):
+        """Función encargada de establece la siguiente url a procesar, ya se para extraer url de noticias o comentarios,
+        esto está controlado los distintos estados en el que se encuentre el programa
+
+        :return: True si aún quedan url por procesar, False en caso de que se haya acabado de procesar las url
+        """
         if self._currentStage == self._GET_URLS_STATE:
             try:
                 if self._currentDateKey == "":
@@ -121,7 +166,7 @@ class SimpleScrapper():
         elif self._currentStage == self._COMMENTS_RETRIEVED_STATE:
             self.logger.info("state detected: {}".format(self._currentStage))
             self.logger.info("nothing to process due to it seems comments and contents files have been downloaded "
-                         "previously for period: {}".format(self._period))
+                             "previously for period: {}".format(self._period))
             return False
         else:
             # State not supported
@@ -129,6 +174,15 @@ class SimpleScrapper():
         return True
 
     def initializeObject(self, initPeriod="", endPeriod="", hemerotecaExtraInfo=[]):
+        """Función encargada de determinar inicializar objetos de control. Checkea en caso de existir un fichero con
+        con los links de las noticias por día lo carga y así evita tener que obtenerlos de nuevo de la hemeroteca o
+        archivo. O en caso de no existir inicializa objetos para procesar la hemeroteca
+
+        :param initPeriod: inicio del período de extracción de comentarios
+        :param endPeriod: fin del período de extracción de comentarios
+        :param hemerotecaExtraInfo: Array libre que la función "generateHemerotecaUrls" tiene que saber cómo explotar.
+        :return:
+        """
         if self.existsNewsPerDayFile():
             self.loadNewsPerDayFile()
         else:
@@ -140,10 +194,18 @@ class SimpleScrapper():
             self.exportData(self._urlsPerDayObj, self._period, "webpages-per-day", "json")
 
     def existsNewsPerDayFile(self):
+        """Función auxiliar que checkea la existencia del fichero de noticias por día para evitar tener que obtenerlo
+        de la hemeroteca o archivo.
+        :return: True en caso de encontrar un fichero con las url de las noticias por día
+            (<ruta_de_resultados>/news-links-per-day). False en caso contrario
+        """
         filename = self.getFilename(self._period, self._NEWS_LINKS_PER_DAY, "json")
         return os.path.isfile(filename)
 
     def loadNewsPerDayFile(self):
+        """Función que se encarga de cargar el fichero de noticias por día
+        :return:
+        """
         filename = self.getFilename(self._period, self._NEWS_LINKS_PER_DAY, "json")
         self.logger.info("trying to load newsPerDayFile from path {}".format(filename))
         with open(filename, 'r') as f:
@@ -169,10 +231,14 @@ class SimpleScrapper():
             self._urlsPerDayIt = iter(list(
                 dict.fromkeys(self._newsUrlsPerDayObj.get(self._currentDateKey,
                                                           [])))) if self._currentDateKey else [] if self._currentDateKey else []
-            self._currentStage =  self._GET_COMMENTS_STATE if self._currentDateKey else self._COMMENTS_RETRIEVED_STATE
+            self._currentStage = self._GET_COMMENTS_STATE if self._currentDateKey else self._COMMENTS_RETRIEVED_STATE
         self.logger.info("newsPerDayFile has been loaded from path {}".format(filename))
 
     def processCurrentPage(self):
+        """Función principal que se encarga de lanzar el proceso de scraping. Y controlar la correcta ejecución dependiendo
+        del estado actual en el que se encuentre el proceso.
+        :return:
+        """
         while self.fetchNext():
             self.logger.info("trying to render url: {}".format(self._currentUrl))
             html = None
@@ -221,6 +287,14 @@ class SimpleScrapper():
     #################### helper functions
     ####################################################################
     def _generateDates(self, init=date(2019, 1, 1), end=date(2019, 8, 31), delta=timedelta(days=1), strFormat=""):
+        """Genera las fechas entre el inicio y el final del período que se va a hacer el scrapping.
+
+        :param init: inicio del período de scrapping
+        :param end: inicio del período de scrapping
+        :param delta: por defecto 1.
+        :param strFormat: formato de fecha, lo determina el medio para el que se está ejecutando
+        :return: lista de fechas formateadas acorde al medio
+        """
         curr = init
         dates = []
         while curr <= end:
@@ -232,6 +306,12 @@ class SimpleScrapper():
         return dates
 
     def getFilename(self, dayData=None, typeData=None, format=None):
+        """Funcion auxiliar para generar el nombre de los ficheros que se van a crear
+        :param dayData: día para le que se ha extraído la información del medio
+        :param typeData: flag que determina si es comentarios o contenido
+        :param format: formato del fichero que se va a crear
+        :return: str. con el nombre del fichero que se va a crear
+        """
         formattedDay = dayData.replace("/", "-") if "/" in dayData else dayData
         fileName = "{rootPath}/{media}/{dataDay}-{dataType}.{fileFormat}".format(
             rootPath=self._rootPath,
@@ -242,6 +322,15 @@ class SimpleScrapper():
         return fileName
 
     def exportData(self, data=None, dayData=None, typeData=None, format=None):
+        """Función auxiliar que se encarga de hacer la creación de los ficheros una vez se haya terminado de procesar
+        un día
+
+        :param data: datos que va a contener el fichero
+        :param dayData: día para le que se ha extraído la información del medio
+        :param typeData: flag que determina si es comentarios o contenido
+        :param format: formato del fichero que se va a crear
+
+        """
         fileName = self.getFilename(dayData, typeData, format)
         self.logger.info("data will be exported in {}".format(format))
         if format == "csv":
@@ -262,39 +351,99 @@ class SimpleScrapper():
         self.logger.debug("exported data fileName: {}".format(fileName))
 
     def getDateFormat(self):
+        """Función para obtener el formato de fecha que se aplica para el medio que lo esté ejecutando
+        :return: formato de fecha que se aplica
+        """
         return self._dateFormat
 
     ####################################################################
     ############ Method to be implemented for children classes
     ####################################################################
     def initialize(self, begin="", end="", rootPath=None):
+        """Función a implementar por cada clase hija por medio. Cada una se encarga de inicializar los parámetros
+        dependiendo de los mejores que le cuadren.
+        :param begin: inicio del período de scrapping
+        :param end: fin del período de scrapping
+        :param rootPath: ruta del directorio donde se almacenarán los resultados.
+
+        :return:
+        """
         raise NotImplementedError("Method must be implemented in subclass")
 
     def generateDates(self, start="", end="", delta=1, dateFormat="%Y/%m/%-d"):
-        # this method should call to self._generateDate
+        """Función que se encarga de generar las fechas para cada medio y llamar a "self._generateDate"
+        :param start: inicio del período de scrapping
+        :param end: fin del período de scrapping
+        :param delta: incremento, por defecto 1 día.
+        :param dateFormat: formato de la fecha que mejor cuadre para el medio
+        :return:
+        """
         raise NotImplementedError("Method must be implemented in subclass")
 
     def generateHemerotecaUrls(self, urlBase=None, dates=None, extraInfo=None):
-        # it should return and object
-        # {
-        #   "<day": [<linksOfNewsPerDay>]
-        # }
+        """Fucnión encargada de generar las url de la hemeroteca de donde se extraerán las noticias.
+        :param urlBase: Url de la hemeroteca del medio
+        :param dates: array de fechas que para las que se extraerá la información
+        :param extraInfo: información extra que se necesite para generar las url de acceso a las noticias por día
+        :return: listado de urls por día
+            # it should return and object that looks like:
+            # {
+            #   "<day": [<linksOfNewsPerDay>]
+            # }
+        """
         raise NotImplementedError("Method must be implemented in subclass")
 
     def filterUrls(self, links=None, urlBase=None):
+        """Función encargada de seleccionar las urls de noticias de todas las que se encuentran en los medios.
+
+        :param links: listado de urls obtenidos de un medio
+        :param urlBase: url base del medio
+        :return: listado de urls de noticias del medio
+        """
         raise NotImplementedError("Method must be implemented in subclass")
 
     def extractComments(self, commentsList=None, urlNoticia=None, specialCase=None):
+        """Funcion que se debe implementar en cada scrapper dependiendo del medio. Función que extrae comentarios de un
+        listado de datos que se obtiene de los servidores del medio.
+
+        :param commentsList: listado de comentarios a extraer
+        :param urlNoticia: url de la noticia de la que se extrae comentario
+        :param specialCase: flag que determina si el listado se debe tratar de manera especial
+        :return: listado de comentarios ya extraídos
+        """
         raise NotImplementedError("Method must be implemented in subclass")
 
     def lookupForComments(self, renderedPageHtml=None, url=None):
+        """Función que implementa el flujo de extracción los comentarios desde la página web renderizada de una url de la
+        noticia.
+        :param renderedPageHtml: contiene la página web
+        :param url: url de la noticia
+        :return: devuelve el listado de comentarios para la noticia que se está procesando
+        """
         raise NotImplementedError("Method must be implemented in subclass")
 
     def extractContent(self, renderedPage=None, url=None):
+        """FUnción que extrae el contenido de la página web de una noticia
+
+        :param renderedPageHtml: contiene la página web
+        :param url: url de la noticia
+        :return: devuelve el listado de comentarios para la noticia que se está procesando
+        """
         raise NotImplementedError("Method must be implemented in subclass")
 
     def generateHemerotecaExtraInfo(self):
+        """ Función auxiliar que genera información necesaria para la correcta construcción de las url de la hemeroteca
+        o archivo
+
+        :return:
+        """
         raise NotImplementedError("Method must be implemented in subclass")
 
     def getTitle(self, renderedPage=None, url=None):
+        """Función que se implementa por cada medio para extraer correctamente su título
+
+        :param renderedPageHtml: contiene la página web
+        :param url: url de la noticia
+        :return: json que contiene la clave title con el título de la noticia
+        """
         raise NotImplementedError("Method must be implemented in subclass")
