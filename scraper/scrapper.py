@@ -192,9 +192,7 @@ def execute(config_obj=None, LOGGER=None):
 
 def _main(argv):
     # config_file = get_opts(argv)
-    config_obj = get_opts(argv)
-    LOGGER = get_logger(config_obj)
-    execute(config_obj, LOGGER)
+    main()
 
 
 def get_logger(config):
@@ -219,7 +217,7 @@ def get_logger(config):
 
 def main():
     """
-    Función main auxiliar. En desuso
+    Función main auxiliar
     :param argv:
     :return:
     """

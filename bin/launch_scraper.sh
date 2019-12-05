@@ -30,10 +30,7 @@ do
   echo " -> medio: ${medio}"
   comando="scrapper -b ${inicio} -e ${fin} -m ${medio} -r ${result_dir}"
   echo " -> comando a ejecutar: ${comando}"
-  result_exec=$comando
-  if [[ ! ${result_exec} -eq 0 ]]; then
-    echo " WARNING: la ejecucion parece haber acabado con errores, revisen los logs"
-  fi
+  $comando
   echo " -> extraccion de comentarios y contenidos para -${medio}- finalizado"
   echo " "
 done

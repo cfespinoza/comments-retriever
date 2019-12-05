@@ -116,6 +116,18 @@ class SimpleScrapper():
                 except StopIteration:
                     # => in case of this code, proccessing datesIt has finished
                     #   it is time to change to next stage
+                    if len(list(dict.fromkeys(self._newsUrlsPerDayObj))) == 0:
+                        self.logger.warning("no news link obtained. The process is aborted")
+                        return False
+                    else:
+                        self.logger.debug("{} days with news".format(len(list(dict.fromkeys(self._newsUrlsPerDayObj)))))
+                        dataToExport = {key: self._newsUrlsPerDayObj.get(key) for key in
+                                        list(self._newsUrlsPerDayObj.keys()) if
+                                        len(self._newsUrlsPerDayObj.get(key)) > 0}
+                        self.logger.debug("{} days with news after remove days without any url".format(
+                            len(list(dict.fromkeys(dataToExport)))))
+                        self._newsUrlsPerDayObj = dataToExport
+
                     self._currentStage = self._GET_COMMENTS_STATE
                     self.exportData(self._newsUrlsPerDayObj, self._period, self._NEWS_LINKS_PER_DAY, "json")
                     self._datesIt = iter(self._datesArr)

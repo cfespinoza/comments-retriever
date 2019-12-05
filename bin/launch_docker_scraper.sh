@@ -30,10 +30,7 @@ do
   echo " -> medio: ${medio}"
   comando="docker run -it --rm -v ${result_dir}:/results -e BEGIN=${inicio} -e END=${fin} -e MEDIA=${medio} ${imagen_docker}"
   echo " -> comando a ejecutar: ${comando}"
-  result_exec=$(${comando})
-  if [[ ! ${result_exec} -eq 0 ]]; then
-    echo " WARNING: la ejecucion parece haber acabado con errores, revisen los logs"
-  fi
+  $comando
   echo " -> extraccion de comentarios y contenidos para -${medio}- finalizado"
   echo " "
 done
