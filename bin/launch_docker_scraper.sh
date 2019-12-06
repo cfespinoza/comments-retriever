@@ -1,9 +1,33 @@
 #!/bin/bash -e
 
-result_dir=${1:?"Es necesario que se establezca la ruta absoluta del directorio en el sistema de ficheros local donde se almacenarán los resultados. Por ejemplo: /var/data"}
-imagen_docker=${2:-scrapper:v1}
-inicio_offset=${3:-"4 day ago"}
-fin_offset=${4:-"3 day ago"}
+for i in "$@"
+do
+case $i in
+    -i=*|--imagen_docker=*)
+    imagen_docker="${i#*=}"
+    echo " > imagen_docker: ${imagen_docker} "
+    ;;
+    -b=*|--begin_offset=*)
+    inicio_offset="${i#*=}"
+    echo " > inicio_offset: ${inicio_offset} "
+    ;;
+    -r=*|--result_dir=*)
+    result_dir="${i#*=}"
+    echo " > result_dir: ${result_dir} "
+    ;;
+    -e=*|--end_offset=*)
+    fin_offset="${i#*=}"
+    echo " > fin_offset: ${fin_offset} "
+    ;;
+    *)
+    ;;
+esac
+done
+
+result_dir=${result_dir:?"Es necesario que se establezca la ruta absoluta del directorio en el sistema de ficheros local donde se almacenarán los resultados. Por ejemplo: ./launch_docker_scraper.sh -r /var/data"}
+imagen_docker=${imagen_docker:-scrapper:v1}
+inicio_offset=${inicio_offset:-"4 day ago"}
+fin_offset=${fin_offset:-"3 day ago"}
 
 lista_medios=("lavanguardia" "elmundo" "abc" "20minutos" "elpais")
 
